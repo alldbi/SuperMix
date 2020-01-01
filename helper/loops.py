@@ -5,7 +5,7 @@ import time
 import torch
 
 from .util import AverageMeter, accuracy
-
+import os
 
 def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
     """vanilla training"""
@@ -65,7 +65,7 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
     return top1.avg, losses.avg
 
 
-def train_distill(epoch, train_loader, module_list, criterion_list, optimizer, opt):
+def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger):
     """One epoch distillation"""
     # set modules as train()
     for module in module_list:
@@ -86,18 +86,27 @@ def train_distill(epoch, train_loader, module_list, criterion_list, optimizer, o
     model_t = module_list[-1]
 
     batch_time = AverageMeter()
-    data_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
     top5 = AverageMeter()
+    xentm = AverageMeter()
+    kdm = AverageMeter()
+    otherm = AverageMeter()
+
 
     end = time.time()
-    for idx, data in enumerate(train_loader):
+    for idx, data_combined in enumerate(train_loader):
+
+        if opt.aug is None:
+            data = data_combined
+        else:
+            data = data_combined[0]
+            data_aug = data_combined[1]
+
         if opt.distill in ['crd']:
             input, target, index, contrast_idx = data
         else:
             input, target, index = data
-        data_time.update(time.time() - end)
 
         input = input.float()
         if torch.cuda.is_available():
@@ -106,6 +115,8 @@ def train_distill(epoch, train_loader, module_list, criterion_list, optimizer, o
             index = index.cuda()
             if opt.distill in ['crd']:
                 contrast_idx = contrast_idx.cuda()
+
+        bs = input.size(0)
 
         # ===================forward=====================
         preact = False
@@ -181,12 +192,16 @@ def train_distill(epoch, train_loader, module_list, criterion_list, optimizer, o
         else:
             raise NotImplementedError(opt.distill)
 
+
         loss = opt.gamma * loss_cls + opt.alpha * loss_div + opt.beta * loss_kd
 
         acc1, acc5 = accuracy(logit_s, target, topk=(1, 5))
-        losses.update(loss.item(), input.size(0))
-        top1.update(acc1[0], input.size(0))
-        top5.update(acc5[0], input.size(0))
+        losses.update(loss.item(), bs)
+        top1.update(acc1.item(), bs)
+        top5.update(acc5.item(), bs)
+        xentm.update(loss_cls.item(), bs)
+        kdm.update(loss_div.item())
+        otherm.update(loss_kd)
 
         # ===================backward=====================
         optimizer.zero_grad()
@@ -194,25 +209,45 @@ def train_distill(epoch, train_loader, module_list, criterion_list, optimizer, o
         optimizer.step()
 
         # ===================meters=====================
-        batch_time.update(time.time() - end)
+        batch_time.update(time.time() - end, 1)
         end = time.time()
 
         # print info
-        if idx % opt.print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                  'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-                epoch, idx, len(train_loader), batch_time=batch_time,
-                data_time=data_time, loss=losses, top1=top1, top5=top5))
-            sys.stdout.flush()
+        if idx % opt.print_freq == 0 and idx>0:
+            for param_group in optimizer.param_groups:
+                lr = param_group['lr']
+            print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, T: %.1f' % (epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr, batch_time.sum))
 
-    print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-          .format(top1=top1, top5=top5))
 
-    return top1.avg, losses.avg
+
+
+
+
+        if idx % opt.test_freq ==0 and idx>0:
+            test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt)
+            model_s.train()
+            if test_acc > best_acc:
+                best_acc = test_acc
+                state = {
+                    'epoch': epoch,
+                    'model': model_s.state_dict(),
+                    'best_acc': best_acc,
+                }
+                save_file = os.path.join(opt.save_folder, '{}.pth'.format(opt.model_s))
+                torch.save(state, save_file)
+            print("\nTest acc: %.2f, best: %.2f" %(test_acc, best_acc))
+
+
+            logger.store([epoch, xentm.avg, kdm.avg, otherm.avg, top1.avg, test_acc, best_acc, lr], log=True)
+
+            xentm.reset()
+            kdm.reset()
+            top1.reset()
+            otherm.reset()
+            batch_time.reset()
+
+
+    return best_acc
 
 
 def validate(val_loader, model, criterion, opt):
@@ -241,23 +276,12 @@ def validate(val_loader, model, criterion, opt):
             # measure accuracy and record loss
             acc1, acc5 = accuracy(output, target, topk=(1, 5))
             losses.update(loss.item(), input.size(0))
-            top1.update(acc1[0], input.size(0))
-            top5.update(acc5[0], input.size(0))
+            top1.update(acc1.item(), input.size(0))
+            top5.update(acc5.item(), input.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if idx % opt.print_freq == 0:
-                print('Test: [{0}/{1}]\t'
-                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                      'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                      'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-                       idx, len(val_loader), batch_time=batch_time, loss=losses,
-                       top1=top1, top5=top5))
-
-        print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-              .format(top1=top1, top5=top5))
-
+    model.train()
     return top1.avg, top5.avg, losses.avg

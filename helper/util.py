@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import torch
 import numpy as np
+import datetime, os
 
 
 def adjust_learning_rate_new(epoch, optimizer, LUT):
@@ -55,6 +56,47 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+
+class Logger:
+    def __init__(self, dir, var_names=None, format=None, args=None  ):
+        self.dir = dir
+        self.var_names = var_names
+        self.format = format
+        self.vars = []
+
+        # create the log folder
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        file = open(dir + '/log.txt', 'w')
+        file.write('Log file created on ' + str(datetime.datetime.now()) + '\n\n')
+
+        dict = {}
+        for arg in vars(args):
+            dict[arg] = str(getattr(args, arg))
+
+        for d in sorted(dict.keys()):
+            file.write(d+ ' : ' + dict[d] + '\n')
+        file.write('\n')
+        file.close()
+
+    def store(self, vars, log=False):
+        self.vars = self.vars + vars
+        if log:
+            self.log()
+
+    def log(self):
+
+        vars = self.vars
+        file = open(self.dir + '/log.txt', 'a')
+        st = ''
+        for i in range(len(vars)):
+            st += self.var_names[i] + ': ' + self.format[i] % (vars[i]) + ', '
+        st += 'time: ' + str(datetime.datetime.now()) + '\n'
+        file.write(st)
+        file.close()
+        self.vars = []
 
 
 if __name__ == '__main__':

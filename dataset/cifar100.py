@@ -1,8 +1,10 @@
 from __future__ import print_function
 
 import os
+import torch
 import socket
 import numpy as np
+import torchvision
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PIL import Image
@@ -16,6 +18,18 @@ std = {
     'cifar100': (0.2675, 0.2565, 0.2761),
 }
 """
+
+
+class ConcatDataset(torch.utils.data.Dataset):
+    def __init__(self, *datasets, len):
+        self.datasets = datasets
+        self.len = len
+
+    def __getitem__(self, i):
+        return tuple(d[i % len(d)] for d in self.datasets)
+
+    def __len__(self):
+        return self.len  # max(len(d) for d in self.datasets)
 
 
 def get_data_folder():
@@ -39,6 +53,7 @@ def get_data_folder():
 class CIFAR100Instance(datasets.CIFAR100):
     """CIFAR100Instance Dataset.
     """
+
     def __getitem__(self, index):
         if self.train:
             img, target = self.train_data[index], self.train_labels[index]
@@ -58,7 +73,7 @@ class CIFAR100Instance(datasets.CIFAR100):
         return img, target, index
 
 
-def get_cifar100_dataloaders(batch_size=128, num_workers=8, is_instance=False):
+def get_cifar100_dataloaders(opt, is_instance=False):
     """
     cifar 100
     """
@@ -86,19 +101,43 @@ def get_cifar100_dataloaders(batch_size=128, num_workers=8, is_instance=False):
                                       download=True,
                                       train=True,
                                       transform=train_transform)
-    train_loader = DataLoader(train_set,
-                              batch_size=batch_size,
-                              shuffle=True,
-                              num_workers=num_workers)
+
+    "load the augmented dataset"
+    if opt.aug is not None:
+        train_transform_aug = transforms.Compose([
+            transforms.RandomCrop(32, padding=2),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
+        ])
+        train_set_aug = torchvision.datasets.ImageFolder(
+            root=opt.aug,
+            transform=train_transform_aug
+        )
+        if opt.aug_size == -1:
+            # max(len(d) for d in self.datasets)
+            opt.aug_size = max(len(train_set), len(train_set_aug))
+
+        print("size of the training set: ", opt.aug_size)
+
+        train_loader = torch.utils.data.DataLoader(
+            ConcatDataset(train_set, train_set_aug, len=opt.aug_size), batch_size=opt.batch_size, shuffle=True,
+            num_workers=opt.num_workers, pin_memory=True)
+    else:
+        train_loader = DataLoader(train_set,
+                                  batch_size=opt.batch_size,
+                                  shuffle=True,
+                                  num_workers=opt.num_workers)
+        opt.aug_size = 50000
 
     test_set = datasets.CIFAR100(root=data_folder,
                                  download=True,
                                  train=False,
                                  transform=test_transform)
     test_loader = DataLoader(test_set,
-                             batch_size=int(batch_size/2),
+                             batch_size=opt.batch_size,
                              shuffle=False,
-                             num_workers=int(num_workers/2))
+                             num_workers=opt.num_workers)
 
     if is_instance:
         return train_loader, test_loader, n_data
@@ -110,6 +149,7 @@ class CIFAR100InstanceSample(datasets.CIFAR100):
     """
     CIFAR100Instance+Sample Dataset
     """
+
     def __init__(self, root, train=True,
                  transform=None, target_transform=None,
                  download=False, k=4096, mode='exact', is_sample=True, percent=1.0):
@@ -220,8 +260,8 @@ def get_cifar100_dataloaders_sample(batch_size=128, num_workers=8, k=4096, mode=
                                  train=False,
                                  transform=test_transform)
     test_loader = DataLoader(test_set,
-                             batch_size=int(batch_size/2),
+                             batch_size=int(batch_size / 2),
                              shuffle=False,
-                             num_workers=int(num_workers/2))
+                             num_workers=int(num_workers / 2))
 
     return train_loader, test_loader, n_data
