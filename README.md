@@ -1,4 +1,4 @@
-# RepDistiller
+# Knowledge Distillation via Data Augmentation
 
 This repo:
 
