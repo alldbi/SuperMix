@@ -29,6 +29,7 @@ from crd.criterion import CRDLoss
 
 from helper.loops import train_distill as train, validate
 from helper.pretrain import init
+import numpy as np
 
 
 def parse_option():
@@ -40,7 +41,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:2', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=550, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
@@ -97,6 +98,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
+    parser.add_argument('--seed', default=800, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -104,13 +106,10 @@ def parse_option():
     # if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
     #     opt.learning_rate = 0.01
 
-    # set the path according to the environment
-    if hostname.startswith('visiongpu'):
-        opt.model_path = '/path/to/my/student_model'
-        opt.tb_path = '/path/to/my/student_tensorboards'
-    else:
-        opt.model_path = './save/student_model'
-        opt.tb_path = './save/student_tensorboards'
+
+
+    opt.model_path = './save/student_model'
+    # opt.tb_path = './save/student_tensorboards'
 
     iterations = opt.lr_decay_epochs.split(',')
     opt.lr_decay_epochs = list([])
@@ -119,12 +118,12 @@ def parse_option():
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}_r:{}_a:{}_b:{}_{}'.format(opt.model_s, opt.model_t, opt.dataset, opt.distill,
-                                                                opt.gamma, opt.alpha, opt.beta, opt.trial)
+    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset, opt.distill,
+                                                                opt.gamma, opt.alpha, opt.beta, opt.trial, opt.device, opt.seed)
 
-    opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
-    if not os.path.isdir(opt.tb_folder):
-        os.makedirs(opt.tb_folder)
+    # opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
+    # if not os.path.isdir(opt.tb_folder):
+    #     os.makedirs(opt.tb_folder)
 
     opt.save_folder = os.path.join(opt.model_path, opt.model_name)
     if not os.path.isdir(opt.save_folder):
@@ -151,10 +150,10 @@ def load_teacher(model_path, n_cls):
     return model
 
 
-def main():
+def main(opt):
     best_acc = 0
-
-    opt = parse_option()
+    np.random.seed(opt.seed)
+    torch.manual_seed(opt.seed)
 
     # tensorboard logger
     # logger = tb_logger.Logger(logdir=opt.tb_folder, flush_secs=2)
@@ -189,6 +188,8 @@ def main():
         device = torch.device(opt.device)
     else:
         device = torch.device('cpu')
+
+
     # model
     model_t = load_teacher(opt.path_t, n_cls)
     model_s = model_dict[opt.model_s](num_classes=n_cls)
@@ -305,8 +306,8 @@ def main():
     module_list.append(model_t)
 
     if torch.cuda.is_available():
-        module_list.cuda()
-        criterion_list.cuda()
+        module_list.to(device)
+        criterion_list.to(device)
         cudnn.benchmark = True
 
     # validate teacher accuracy
@@ -328,15 +329,7 @@ def main():
 
     print('best accuracy:', best_acc)
 
-    # save model
-    state = {
-
-        'opt': opt,
-        'model': model_s.state_dict(),
-    }
-    save_file = os.path.join(opt.save_folder, '{}_last.pth'.format(opt.model_s))
-    torch.save(state, save_file)
-
 
 if __name__ == '__main__':
-    main()
+    opt = parse_option()
+    main(opt)
