@@ -73,8 +73,8 @@ Note: the default setting is for a single-GPU training. If you would like to pla
 Performance is measured by classification accuracy (%)
 
 1. Teacher and student are of the **same** architectural type.
-2. KDA_a: KDA with unsupervised augmentation using averaging
-3. KDA_b: KDA with supervised augmentation using the same Teacher network.  
+    - KDA_a: KDA with unsupervised augmentation using averaging
+    - KDA_b: KDA with supervised augmentation using the same Teacher network.  
 
 | Teacher <br> Student | wrn-40-2 <br> wrn-16-2 | wrn-40-2 <br> wrn-40-1 | resnet56 <br> resnet20 | resnet110 <br> resnet20 | resnet110 <br> resnet32 | resnet32x4 <br> resnet8x4 |  vgg13 <br> vgg8 |
 |:---------------:|:-----------------:|:-----------------:|:-----------------:|:------------------:|:------------------:|:--------------------:|:-----------:|
