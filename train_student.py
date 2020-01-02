@@ -36,12 +36,13 @@ def parse_option():
 
     parser = argparse.ArgumentParser('argument for training')
 
-    parser.add_argument('--print_freq', type=int, default=100, help='print frequency')
+    parser.add_argument('--print_freq', type=int, default=50, help='print frequency')
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
-    parser.add_argument('--epochs', type=int, default=240, help='number of training epochs')
+    parser.add_argument('--epochs', type=int, default=550, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
 
     # optimization
@@ -74,12 +75,12 @@ def parse_option():
     parser.add_argument('--aug', type=str, default='/home/lab320/dataset/cifar_augmented_kl^3/out_resnet110',
     help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=-1,
-                        help='size of the augmented dataset, -1 means the maximum possible')
+                        help='size of the augmented dataset, -1 means the maximum possible size')
 
-    parser.add_argument('--trial', type=str, default='1', help='trial id')
+    parser.add_argument('--trial', type=str, default='3', help='trial id')
 
-    parser.add_argument('-r', '--gamma', type=float, default=1, help='weight for classification')
-    parser.add_argument('-a', '--alpha', type=float, default=1, help='weight balance for KD')
+    parser.add_argument('-r', '--gamma', type=float, default=2, help='weight for classification')
+    parser.add_argument('-a', '--alpha', type=float, default=0, help='weight balance for KD')
     parser.add_argument('-b', '--beta', type=float, default=0, help='weight balance for other losses')
 
     # KL distillation
@@ -100,8 +101,8 @@ def parse_option():
     opt = parser.parse_args()
 
     # set different learning rate from these 4 models
-    if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
-        opt.learning_rate = 0.01
+    # if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
+    #     opt.learning_rate = 0.01
 
     # set the path according to the environment
     if hostname.startswith('visiongpu'):
@@ -177,10 +178,17 @@ def main():
 
 
     # compute number of epochs using the original cifar100 dataset size
-    opt.lr_decay_epochs = list(int(i * 50000/opt.aug_size)+1 for i in opt.lr_decay_epochs)
+    opt.lr_decay_epochs = list(int(i * 50000/opt.aug_size) for i in opt.lr_decay_epochs)
+    opt.epochs = int(opt.epochs * 50000/opt.aug_size)
 
     print('Decay epochs: ', opt.lr_decay_epochs)
+    print('Max epochs: ', opt.epochs)
 
+    # set the device
+    if torch.cuda.is_available():
+        device = torch.device(opt.device)
+    else:
+        device = torch.device('cpu')
     # model
     model_t = load_teacher(opt.path_t, n_cls)
     model_s = model_dict[opt.model_s](num_classes=n_cls)
@@ -302,7 +310,7 @@ def main():
         cudnn.benchmark = True
 
     # validate teacher accuracy
-    teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt)
+    teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt, device)
     print('teacher accuracy: ', teacher_acc, '\n')
 
     # creat logger
@@ -314,14 +322,15 @@ def main():
     for epoch in range(1, opt.epochs + 1):
         adjust_learning_rate(epoch, opt, optimizer)
         time1 = time.time()
-        best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger)
+        best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger, device)
         time2 = time.time()
-        print('epoch {}, total time {:.2f}\n'.format(epoch, time2 - time1))
+        print('\nepoch {}, total time {:.2f}\n'.format(epoch, time2 - time1))
 
     print('best accuracy:', best_acc)
 
     # save model
     state = {
+
         'opt': opt,
         'model': model_s.state_dict(),
     }

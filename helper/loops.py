@@ -7,7 +7,8 @@ import torch
 from .util import AverageMeter, accuracy
 import os
 
-def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
+
+def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, device):
     """vanilla training"""
     model.train()
 
@@ -22,9 +23,8 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
         data_time.update(time.time() - end)
 
         input = input.float()
-        if torch.cuda.is_available():
-            input = input.cuda()
-            target = target.cuda()
+        input = input.to(device)
+        target = target.to(device)
 
         # ===================forward=====================
         output = model(input)
@@ -55,8 +55,8 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
                   'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-                   epoch, idx, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses, top1=top1, top5=top5))
+                epoch, idx, len(train_loader), batch_time=batch_time,
+                data_time=data_time, loss=losses, top1=top1, top5=top5))
             sys.stdout.flush()
 
     print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
@@ -65,7 +65,7 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
     return top1.avg, losses.avg
 
 
-def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger):
+def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger, device):
     """One epoch distillation"""
     # set modules as train()
     for module in module_list:
@@ -93,9 +93,11 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
     kdm = AverageMeter()
     otherm = AverageMeter()
 
-
     end = time.time()
     for idx, data_combined in enumerate(train_loader):
+
+        model_s.train()
+        model_t.eval()
 
         if opt.aug is None:
             data = data_combined
@@ -107,14 +109,19 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             input, target, index, contrast_idx = data
         else:
             input, target, index = data
+            if opt.aug is not None:
+                input_aug = data_aug[0]
 
         input = input.float()
-        if torch.cuda.is_available():
-            input = input.cuda()
-            target = target.cuda()
-            index = index.cuda()
-            if opt.distill in ['crd']:
-                contrast_idx = contrast_idx.cuda()
+        input = input.to(device)
+        target = target.to(device)
+        index = index.to(device)
+
+        if opt.distill in ['crd']:
+            contrast_idx = contrast_idx.to(device)
+
+        if opt.aug is not None:
+            input_aug = input_aug.to(device)
 
         bs = input.size(0)
 
@@ -123,13 +130,33 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         if opt.distill in ['abound']:
             preact = True
         feat_s, logit_s = model_s(input, is_feat=True, preact=preact)
-        with torch.no_grad():
+
+        # make training faster when there is no need to the prediction of the teacher for nat samples
+        if not (opt.distill in ['kd'] and opt.alpha==0):
             feat_t, logit_t = model_t(input, is_feat=True, preact=preact)
             feat_t = [f.detach() for f in feat_t]
 
+        # compute the predicted label of the teacher for the augmented samples
+        if opt.aug is not None:
+            logit_aug_t = model_t(input_aug)
+            logit_aug_s = model_s(input_aug)
+            pred_lbl_t = logit_aug_t.argmax(1)
+
         # cls + kl div
-        loss_cls = criterion_cls(logit_s, target)
-        loss_div = criterion_div(logit_s, logit_t)
+        loss_cls_nat = criterion_cls(logit_s, target)
+
+        loss_cls_aug = 0
+        if opt.aug is not None:
+            loss_cls_aug = criterion_cls(logit_aug_s, pred_lbl_t)
+
+        loss_cls = loss_cls_nat + loss_cls_aug
+
+
+        if opt.alpha>0:
+            loss_div = criterion_div(logit_s, logit_t)
+        else:
+            loss_div = torch.zeros([1])
+            loss_div = loss_div.to(device)
 
         # other kd beyond KL divergence
         if opt.distill == 'kd':
@@ -192,14 +219,13 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         else:
             raise NotImplementedError(opt.distill)
 
-
         loss = opt.gamma * loss_cls + opt.alpha * loss_div + opt.beta * loss_kd
 
         acc1, acc5 = accuracy(logit_s, target, topk=(1, 5))
         losses.update(loss.item(), bs)
         top1.update(acc1.item(), bs)
         top5.update(acc5.item(), bs)
-        xentm.update(loss_cls.item(), bs)
+        xentm.update(loss_cls_nat.item(), bs)
         kdm.update(loss_div.item())
         otherm.update(loss_kd)
 
@@ -213,18 +239,14 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         end = time.time()
 
         # print info
-        if idx % opt.print_freq == 0 and idx>0:
+        if idx % opt.print_freq == 0 and idx > 0:
             for param_group in optimizer.param_groups:
                 lr = param_group['lr']
-            print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, T: %.1f' % (epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr, batch_time.sum))
+            print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, T: %.1f' % (
+            epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr, batch_time.avg*opt.print_freq))
 
-
-
-
-
-
-        if idx % opt.test_freq ==0 and idx>0:
-            test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt)
+        if idx % opt.test_freq == 0 and idx > 0:
+            test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt, device)
             model_s.train()
             if test_acc > best_acc:
                 best_acc = test_acc
@@ -235,8 +257,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
                 }
                 save_file = os.path.join(opt.save_folder, '{}.pth'.format(opt.model_s))
                 torch.save(state, save_file)
-            print("\nTest acc: %.2f, best: %.2f" %(test_acc, best_acc))
-
+            print("\nTest acc: %.2f, best: %.2f\n" % (test_acc, best_acc))
 
             logger.store([epoch, xentm.avg, kdm.avg, otherm.avg, top1.avg, test_acc, best_acc, lr], log=True)
 
@@ -245,12 +266,12 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             top1.reset()
             otherm.reset()
             batch_time.reset()
-
+            end = time.time()
 
     return best_acc
 
 
-def validate(val_loader, model, criterion, opt):
+def validate(val_loader, model, criterion, opt, device):
     """validation"""
     batch_time = AverageMeter()
     losses = AverageMeter()
@@ -265,9 +286,8 @@ def validate(val_loader, model, criterion, opt):
         for idx, (input, target) in enumerate(val_loader):
 
             input = input.float()
-            if torch.cuda.is_available():
-                input = input.cuda()
-                target = target.cuda()
+            input = input.to(device)
+            target = target.to(device)
 
             # compute output
             output = model(input)

@@ -117,6 +117,7 @@ def get_cifar100_dataloaders(opt, is_instance=False):
         if opt.aug_size == -1:
             # max(len(d) for d in self.datasets)
             opt.aug_size = max(len(train_set), len(train_set_aug))
+            opt.aug_size -= opt.aug_size % 100
 
         print("size of the training set: ", opt.aug_size)
 
