@@ -93,7 +93,7 @@ Performance is measured by classification accuracy (%)
 | NST  | 73.68 | 72.24 | 69.60 | 69.53 | 71.96 | 73.30 | 71.53 |
 | CRD  | 75.48 | 74.14 | 71.16 | 71.46 | 73.48 | 75.51 | 73.94 |
 | KDA_a|       |       |       |  |       |       |       |
-| **KDA_b**|       |       |       | **72.00 ± 0.18** |   **74.25 ± 0.07**    |       |       |
+| **KDA_b**|       |       |       | **72.00 ± 0.18** |   **74.25 ± 0.07**    |       |   **74.59 ± 0.12**    |
 
 2. Teacher and student are of **different** architectural type.
 
