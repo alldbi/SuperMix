@@ -21,7 +21,7 @@ from models.util import Connector, Translator, Paraphraser
 
 from dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-from helper.util import adjust_learning_rate, Logger
+from helper.util import adjust_learning_rate, Logger, count_parameters
 
 from distiller_zoo import DistillKL, HintLoss, Attention, Similarity, Correlation, VIDLoss, RKDLoss
 from distiller_zoo import PKT, ABLoss, FactorTransfer, KDSVD, FSP, NSTLoss
@@ -58,7 +58,7 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='wrn_16_2',
+    parser.add_argument('--model_s', type=str, default='wrn_40_1',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
@@ -98,7 +98,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=334, type=int, help='random seed')
+    parser.add_argument('--seed', default=500, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -193,6 +193,11 @@ def main(opt):
     # model
     model_t = load_teacher(opt.path_t, n_cls)
     model_s = model_dict[opt.model_s](num_classes=n_cls)
+
+
+    print("Size of the teacher:", count_parameters(model_t))
+    print("Size of the student:", count_parameters(model_s))
+
 
     data = torch.randn(2, 3, 32, 32)
     model_t.eval()
