@@ -73,7 +73,7 @@ def parse_option():
 
     # parser.add_argument('--aug', type=str, default=None,
     #                     help='address of the augmented dataset')
-    parser.add_argument('--aug', type=str, default='/home/lab320/dataset/cifar_augmented_kl^3/out_vgg13',
+    parser.add_argument('--aug', type=str, default='/home/lab320/dataset/cifar_augmented_kl^3/out_avg',
     help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=-1,
                         help='size of the augmented dataset, -1 means the maximum possible size')
@@ -98,7 +98,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=600, type=int, help='random seed')
+    parser.add_argument('--seed', default=700, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -118,7 +118,7 @@ def parse_option():
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset, opt.distill,
+    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset, opt.distill, opt.aug[-7:],
                                                                 opt.gamma, opt.alpha, opt.beta, opt.trial, opt.device, opt.seed)
 
     # opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
