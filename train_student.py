@@ -43,12 +43,12 @@ def parse_option():
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
     parser.add_argument('--device', type=str, default='cuda:2', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
-    parser.add_argument('--epochs', type=int, default=550, help='number of training epochs')
+    parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.1, help='learning rate')
-    parser.add_argument('--lr_decay_epochs', type=str, default='150, 250, 350, 450',
+    parser.add_argument('--lr_decay_epochs', type=str, default='200, 300, 400, 500',#'150, 250, 350, 450',
                         help='where to decay lr, can be a list')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-4, help='weight decay')
@@ -78,7 +78,7 @@ def parse_option():
     parser.add_argument('--aug_size', type=str, default=-1,
                         help='size of the augmented dataset, -1 means the maximum possible size')
 
-    parser.add_argument('--trial', type=str, default='3', help='trial id')
+    parser.add_argument('--trial', type=str, default='extended', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=0, help='weight balance for KD')
@@ -98,7 +98,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=3250, type=int, help='random seed')
+    parser.add_argument('--seed', default=2222, type=int, help='random seed')
 
     opt = parser.parse_args()
 
