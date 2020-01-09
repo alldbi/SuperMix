@@ -113,7 +113,7 @@ Performance is measured by classification accuracy (%)
 | NST | 58.16 | 64.96 | 71.28 | 74.12 | 74.68 | 74.89 |
 | CRD | 69.73 | 69.11 | 74.30 | 75.11 | 75.65 | 76.05 |
 | KDA_a |  **70.53±0.21**  |       |      |   77.18±0.19   |   77.99±0.15   |   75.90±0.09     |
-| **KDA_b** |  70.49±0.56   |       |      |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
+| **KDA_b** |  70.49±0.56   |    71.69±0.36   |      |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
 ## Citation
 
 If you find this repo useful for your research, please consider citing the paper
