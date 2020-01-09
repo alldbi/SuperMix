@@ -25,6 +25,7 @@ def adjust_learning_rate(epoch, opt, optimizer):
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -59,7 +60,7 @@ def accuracy(output, target, topk=(1,)):
 
 
 class Logger:
-    def __init__(self, dir, var_names=None, format=None, args=None  ):
+    def __init__(self, dir, var_names=None, format=None, args=None):
         self.dir = dir
         self.var_names = var_names
         self.format = format
@@ -77,7 +78,7 @@ class Logger:
             dict[arg] = str(getattr(args, arg))
 
         for d in sorted(dict.keys()):
-            file.write(d+ ' : ' + dict[d] + '\n')
+            file.write(d + ' : ' + dict[d] + '\n')
         file.write('\n')
         file.close()
 
@@ -98,9 +99,19 @@ class Logger:
         file.close()
         self.vars = []
 
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-if __name__ == '__main__':
 
+def get_teacher_name(model_path):
+    """parse teacher name"""
+    segments = model_path.split('/')[-2].split('_')
+    if segments[0] != 'wrn':
+        return segments[0]
+    else:
+        return segments[0] + '_' + segments[1] + '_' + segments[2]
+
+
+if __name__ == '__main__':
     pass

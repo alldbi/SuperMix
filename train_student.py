@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import os
 import argparse
-import socket
 import time
 
 # import tensorboard_logger as tb_logger
@@ -21,7 +20,7 @@ from models.util import Connector, Translator, Paraphraser
 
 from dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-from helper.util import adjust_learning_rate, Logger, count_parameters
+from helper.util import adjust_learning_rate, Logger, count_parameters, get_teacher_name
 
 from distiller_zoo import DistillKL, HintLoss, Attention, Similarity, Correlation, VIDLoss, RKDLoss
 from distiller_zoo import PKT, ABLoss, FactorTransfer, KDSVD, FSP, NSTLoss
@@ -33,7 +32,6 @@ import numpy as np
 
 
 def parse_option():
-    hostname = socket.gethostname()
 
     parser = argparse.ArgumentParser('argument for training')
 
@@ -48,7 +46,7 @@ def parse_option():
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.1, help='learning rate')
-    parser.add_argument('--lr_decay_epochs', type=str, default='200, 300, 400, 500',#'150, 250, 350, 450',
+    parser.add_argument('--lr_decay_epochs', type=str, default='200, 300, 400, 500',  # '150, 250, 350, 450',
                         help='where to decay lr, can be a list')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-4, help='weight decay')
@@ -58,12 +56,12 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='ShuffleV1',
+    parser.add_argument('--model_s', type=str, default='resnet20',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2'])
-    parser.add_argument('--path_t', type=str, default='./save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/resnet110_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
 
     # distillation
@@ -73,9 +71,9 @@ def parse_option():
 
     # parser.add_argument('--aug', type=str, default=None,
     #                     help='address of the augmented dataset')
-    parser.add_argument('--aug', type=str, default='/home/lab320/dataset/cifar_augmented_kl^3/out_avg',
-    help='address of the augmented dataset')
-    parser.add_argument('--aug_size', type=str, default=-1,
+    parser.add_argument('--aug', type=str, default='/home/lab320/dataset/cifar_augmented_kl^3/out_resnet110',
+                        help='address of the augmented dataset')
+    parser.add_argument('--aug_size', type=str, default=500000,
                         help='size of the augmented dataset, -1 means the maximum possible size')
 
     parser.add_argument('--trial', type=str, default='extended', help='trial id')
@@ -106,10 +104,7 @@ def parse_option():
     if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
         opt.learning_rate = 0.02
 
-
-
     opt.model_path = './save/student_model'
-    # opt.tb_path = './save/student_tensorboards'
 
     iterations = opt.lr_decay_epochs.split(',')
     opt.lr_decay_epochs = list([])
@@ -118,8 +113,10 @@ def parse_option():
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset, opt.distill, opt.aug[-7:],
-                                                                opt.gamma, opt.alpha, opt.beta, opt.trial, opt.device, opt.seed)
+    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset,
+                                                                            opt.distill, opt.aug[-7:],
+                                                                            opt.gamma, opt.alpha, opt.beta, opt.trial,
+                                                                            opt.device, opt.seed, opt.aug_size)
 
     # opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
     # if not os.path.isdir(opt.tb_folder):
@@ -131,14 +128,6 @@ def parse_option():
 
     return opt
 
-
-def get_teacher_name(model_path):
-    """parse teacher name"""
-    segments = model_path.split('/')[-2].split('_')
-    if segments[0] != 'wrn':
-        return segments[0]
-    else:
-        return segments[0] + '_' + segments[1] + '_' + segments[2]
 
 
 def load_teacher(model_path, n_cls):
@@ -175,10 +164,9 @@ def main(opt):
     # set the interval for testing
     opt.test_freq = int(50000 / opt.batch_size)
 
-
     # compute number of epochs using the original cifar100 dataset size
-    opt.lr_decay_epochs = list(int(i * 50000/opt.aug_size) for i in opt.lr_decay_epochs)
-    opt.epochs = int(opt.epochs * 50000/opt.aug_size)
+    opt.lr_decay_epochs = list(int(i * 50000 / opt.aug_size) for i in opt.lr_decay_epochs)
+    opt.epochs = int(opt.epochs * 50000 / opt.aug_size)
 
     print('Decay epochs: ', opt.lr_decay_epochs)
     print('Max epochs: ', opt.epochs)
@@ -189,15 +177,12 @@ def main(opt):
     else:
         device = torch.device('cpu')
 
-
     # model
     model_t = load_teacher(opt.path_t, n_cls)
     model_s = model_dict[opt.model_s](num_classes=n_cls)
 
-
     print("Size of the teacher:", count_parameters(model_t))
     print("Size of the student:", count_parameters(model_s))
-
 
     data = torch.randn(2, 3, 32, 32)
     model_t.eval()
@@ -328,7 +313,8 @@ def main(opt):
     for epoch in range(1, opt.epochs + 1):
         adjust_learning_rate(epoch, opt, optimizer)
         time1 = time.time()
-        best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger, device)
+        best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
+                         device)
         time2 = time.time()
         print('\nepoch {}, total time {:.2f}\n'.format(epoch, time2 - time1))
 
