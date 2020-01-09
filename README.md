@@ -72,7 +72,13 @@ Note: the default setting is for a single-GPU training. If you would like to pla
 
 Performance is measured by classification accuracy (%)
 
-1. Teacher and student are of the **same** architectural type.
+1. Performance of distillation vs. size of the augmented dataset.
+
+| Teacher/Student | Aug  | 100k | 200k | 300k | 400k | 500k |
+| -----------     | ---- | ---- | ---- | ---- | ---- | ---- |
+| res110/res20    | MAS  |      |      |      |      |      |
+
+2. Teacher and student are of the **same** architectural type.
     - KDA_a: KDA with unsupervised augmentation using averaging
     - KDA_b: KDA with supervised augmentation using the same Teacher network.  
 
@@ -95,7 +101,7 @@ Performance is measured by classification accuracy (%)
 | KDA_a|  75.70±0.11     |   75.12±0.31     |   _71.78±0.26_    | _72.26±0.42_ |   73.70±0.32    |   76.17±0.12     |    74.07±0.32   |
 | **KDA_b**|    **76.30±0.14**   |    **75.49±0.38**   |   _**72.13±0.46**_    | _**72.39±0.06**_ |   **74.25±0.07**    |   **76.92±0.08**    |   **74.59±0.12**    |
 
-2. Teacher and student are of **different** architectural type.
+3. Teacher and student are of **different** architectural type.
 
 | Teacher <br> Student | vgg13 <br> MobileNetV2 | ResNet50 <br> MobileNetV2 | ResNet50 <br> vgg8 | resnet32x4 <br> ShuffleNetV1 | resnet32x4 <br> ShuffleNetV2 | wrn-40-2 <br> ShuffleNetV1 |
 |:---------------:|:-----------------:|:--------------------:|:-------------:|:-----------------------:|:-----------------------:|:---------------------:|
