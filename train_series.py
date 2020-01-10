@@ -69,7 +69,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=602, type=int, help='random seed')
+    parser.add_argument('--seed', default=530, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -92,13 +92,11 @@ def parse_option():
 
 
 if __name__ == '__main__':
-    opt = parse_option()
-
-    aug_size_list = [100000, 200000, 300000, 400000]
+    aug_size_list = [200000, 300000, 400000]
 
     for a in aug_size_list:
+        opt = parse_option()
         opt.aug_size = a
-
         opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset,
                                                                                 opt.distill, opt.aug[-7:],
                                                                                 opt.gamma, opt.alpha, opt.beta,

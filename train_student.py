@@ -170,6 +170,7 @@ def main(opt):
 
     print('Decay epochs: ', opt.lr_decay_epochs)
     print('Max epochs: ', opt.epochs)
+    # exit()
 
     # set the device
     if torch.cuda.is_available():
