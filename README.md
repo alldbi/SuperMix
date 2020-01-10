@@ -76,7 +76,7 @@ Performance is measured by classification accuracy (%)
 
 | Teacher/Student | Aug  | 0   | 100k | 200k | 300k | 400k | 500k |
 | -----------     | ---- | ----| --- | ---- | ---- | ---- | ---- |
-| <sub> resnet110/resnet20    | MAS  |  69.06    |   71.52±0.43   |      |      |      |  72.39±0.06  |
+| <sub> resnet110/resnet20    | MAS  |  69.06    |   71.52±0.43   |   71.79±0.22   |      |      |  72.39±0.06  |
 
 2. Teacher and student are of the **same** architectural type.
     - MAA: KDA with unsupervised augmentation using averaging
