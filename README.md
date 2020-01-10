@@ -74,11 +74,11 @@ Performance is measured by classification accuracy (%)
 
 1. Performance of distillation vs. size of the augmented dataset.
 
-| Teacher/Student | Aug  | 0   | <sub> 100k |<sub> 200k |<sub> 300k |<sub> 400k | <sub>500k |
-| -----------     | ---- | ----| --- | ---- | ---- | ---- | ---- |
-|  wrn-40-2/wrn-16-2     | MAS  | <sub>   73.25  |                   |          |                 |                 |     76.30±0.14 |                          
-| resnet110/resnet20    | MAS  | <sub> 69.06±0.00    |   71.52±0.43   |   71.79±0.22   |   71.81±0.29   |   72.31±0.20   |  72.39±0.06  |
-| resnet110/resnet32    | MAS  | <sub> 71.14    |      |      |      |      |  74.25±0.07  |
+| Teacher/Student | Aug  | 0   | 50K | <sub> 100k |<sub> 200k |<sub> 300k |<sub> 400k | <sub>500k |
+| -----------     | ---- | ----| --- | --- | ---- | ---- | ---- | ---- |
+|  wrn-40-2/wrn-16-2     | MAS  | <sub>   73.25  |  |                 |          |                 |                 |     76.30±0.14 |                          
+| resnet110/resnet20    | MAS  | <sub> 69.06±0.00  |   |   71.52±0.43   |   71.79±0.22   |   71.81±0.29   |   72.31±0.20   |  72.39±0.06  |
+| resnet110/resnet32    | MAS  | <sub> 71.14    |    |  |      |      |      |  74.25±0.07  |
 
 2. Teacher and student are of the **same** architectural type.
     - MAA: KDA with unsupervised augmentation using averaging
