@@ -5,6 +5,7 @@ import time
 import torch
 
 from .util import AverageMeter, accuracy
+from helper.util import WarmUpLR
 import os
 
 
@@ -65,7 +66,8 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, device)
     return top1.avg, losses.avg
 
 
-def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger, device):
+def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
+                  device, warmup_scheduler):
     """One epoch distillation"""
     # set modules as train()
     for module in module_list:
@@ -93,8 +95,12 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
     kdm = AverageMeter()
     otherm = AverageMeter()
 
+
+
     end = time.time()
     for idx, data_combined in enumerate(train_loader):
+        if epoch < 5+1:
+            warmup_scheduler.step()
 
         model_s.train()
         model_t.eval()
@@ -132,7 +138,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         feat_s, logit_s = model_s(input, is_feat=True, preact=preact)
 
         # make training faster when there is no need to the prediction of the teacher for nat samples
-        if not (opt.distill in ['kd'] and opt.alpha==0):
+        if not (opt.distill in ['kd'] and opt.alpha == 0):
             feat_t, logit_t = model_t(input, is_feat=True, preact=preact)
             feat_t = [f.detach() for f in feat_t]
 
@@ -151,8 +157,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
 
         loss_cls = loss_cls_nat + loss_cls_aug
 
-
-        if opt.alpha>0:
+        if opt.alpha > 0:
             loss_div = criterion_div(logit_s, logit_t)
         else:
             loss_div = torch.zeros([1])
@@ -243,7 +248,8 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             for param_group in optimizer.param_groups:
                 lr = param_group['lr']
             print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, T: %.1f' % (
-            epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr, batch_time.avg*opt.print_freq))
+                epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr,
+                batch_time.avg * opt.print_freq))
 
         if idx % opt.test_freq == 0 and idx > 0:
             test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt, device)
@@ -284,7 +290,6 @@ def validate(val_loader, model, criterion, opt, device):
     with torch.no_grad():
         end = time.time()
         for idx, (input, target) in enumerate(val_loader):
-
             input = input.float()
             input = input.to(device)
             target = target.to(device)
