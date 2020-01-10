@@ -20,7 +20,7 @@ from models.util import Connector, Translator, Paraphraser
 
 from dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-from helper.util import adjust_learning_rate, Logger, count_parameters, get_teacher_name
+from helper.util import adjust_learning_rate, Logger, count_parameters, get_teacher_name, WarmUpLR
 
 from distiller_zoo import DistillKL, HintLoss, Attention, Similarity, Correlation, VIDLoss, RKDLoss
 from distiller_zoo import PKT, ABLoss, FactorTransfer, KDSVD, FSP, NSTLoss
@@ -71,7 +71,7 @@ def parse_option():
 
     # parser.add_argument('--aug', type=str, default=None,
     #                     help='address of the augmented dataset')
-    parser.add_argument('--aug', type=str, default='/home/lab320/dataset/cifar_augmented_kl^3/out_resnet110',
+    parser.add_argument('--aug', type=str, default='/home/aldb/outputs/out_avg',
                         help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=500000,
                         help='size of the augmented dataset, -1 means the maximum possible size')
@@ -96,7 +96,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=11, type=int, help='random seed')
+    parser.add_argument('--seed', default=779, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -301,6 +301,9 @@ def main(opt):
         criterion_list.to(device)
         cudnn.benchmark = True
 
+    # setup warmup
+    warmup_scheduler = WarmUpLR(optimizer, len(train_loader) * 5)
+
     # validate teacher accuracy
     teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt, device)
     print('teacher accuracy: ', teacher_acc, '\n')
@@ -315,7 +318,7 @@ def main(opt):
         adjust_learning_rate(epoch, opt, optimizer)
         time1 = time.time()
         best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
-                         device)
+                         device, warmup_scheduler)
         time2 = time.time()
         print('\nepoch {}, total time {:.2f}\n'.format(epoch, time2 - time1))
 
