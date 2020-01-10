@@ -76,7 +76,7 @@ Performance is measured by classification accuracy (%)
 
 | Teacher/Student | Aug  | 0   | 100k | 200k | 300k | 400k | 500k |
 | -----------     | ---- | ----| --- | ---- | ---- | ---- | ---- |
-| <sub> resnet110/resnet20    | MAS  |  69.06    |   71.52±0.43   |      |      |      |  72.39±0.06  |
+| <sub> resnet110/resnet20    | MAS  |  69.06    |   71.52±0.43   |   71.79±0.22   |   71.81±0.29   |   72.31±0.20   |  72.39±0.06  |
 
 2. Teacher and student are of the **same** architectural type.
     - MAA: KDA with unsupervised augmentation using averaging
@@ -118,8 +118,8 @@ Performance is measured by classification accuracy (%)
 | FT | 61.78 | 60.99 | 70.29 | 71.75 | 72.50 | 72.03 |
 | NST | 58.16 | 64.96 | 71.28 | 74.12 | 74.68 | 74.89 |
 | CRD | 69.73 | 69.11 | 74.30 | 75.11 | 75.65 | 76.05 |
-| MAA |  **70.53±0.21**  |       |      |   77.18±0.19   |   77.99±0.15   |   75.90±0.09     |
-| **MAS** |  70.49±0.56   |    71.69±0.36   |      |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
+| MAA |  **70.53±0.21**  |       |    74.94±0.42  |   77.18±0.19   |   77.99±0.15   |   75.90±0.09     |
+| **MAS** |  70.49±0.56   |    71.69±0.36   |   **75.45±0.08**   |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
 ## Citation
 
 If you find this repo useful for your research, please consider citing the paper
