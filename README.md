@@ -6,7 +6,7 @@ This repo:
 
 "Contrastive Representation Distillation" (CRD). [Paper](http://arxiv.org/abs/1910.10699), [Project Page](http://hobbitlong.github.io/CRD/).
 
-[](https://github.com/alldbi/KDA/blob/master/examples/fig.jpg)
+![](https://github.com/alldbi/KDA/blob/master/examples/fig.jpg)
 
 <p></p>
 
