@@ -3,6 +3,7 @@ from __future__ import print_function
 import torch
 import numpy as np
 import datetime, os
+from torch.optim.lr_scheduler import _LRScheduler
 
 
 def adjust_learning_rate_new(epoch, optimizer, LUT):
@@ -111,6 +112,24 @@ def get_teacher_name(model_path):
         return segments[0]
     else:
         return segments[0] + '_' + segments[1] + '_' + segments[2]
+
+
+class WarmUpLR(_LRScheduler):
+    """warmup_training learning rate scheduler
+    Args:
+        optimizer: optimzier(e.g. SGD)
+        total_iters: totoal_iters of warmup phase
+    """
+
+    def __init__(self, optimizer, total_iters, last_epoch=-1):
+        self.total_iters = total_iters
+        super().__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        """we will use the first m batches, and set the learning
+        rate to base_lr * m / total_iters
+        """
+        return [base_lr * self.last_epoch / (self.total_iters + 1e-8) for base_lr in self.base_lrs]
 
 
 if __name__ == '__main__':
