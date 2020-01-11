@@ -78,7 +78,7 @@ Performance is measured by classification accuracy (%)
 | -----------     | ---- | ----| --- | --- | ---- | ---- | ---- | ---- |
 |  wrn-40-2/wrn-16-2     | MAS  |    73.25  |74.61±0.15  |                 |          |                 |                 |     76.30±0.14 |                          
 | resnet110/resnet20    | MAS  |  69.06±0.00  |   |   71.52±0.43   |   71.79±0.22   |   71.81±0.29   |   72.31±0.20   |  72.39±0.06  |
-| resnet110/resnet32    | MAS  |  71.14    |    |  |      |      |      |  74.25±0.07  |
+| resnet110/resnet32    | MAS  |  71.14    | 72.74±0.02   |  |      |      |      |  74.25±0.07  |
 | vgg13/vgg8    | MAS  |  70.36    |  71.74±0.20  |  |      |      |      | 74.59±0.12  |
 
 2. Teacher and student are of the **same** architectural type.
