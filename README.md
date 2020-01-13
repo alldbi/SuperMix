@@ -72,19 +72,24 @@ Note: the default setting is for a single-GPU training. If you would like to pla
 
 Performance is measured by classification accuracy (%)
 
-1. Performance of distillation vs. size of the augmented dataset.
+1. Performance of distillation vs. size of the augmented dataset when teacher and student are from the same architecture.
 
 | Teacher/Student | Aug  | 0   | 50K | 100k |200k |300k | 400k | 500k |
 | -----------     | ---- | ----| --- | --- | ---- | ---- | ---- | ---- |
-| wrn-40-2/wrn-16-2    | MAS  | 73.25  |74.61±0.15  |       75.81±0.14  |  75.91±0.21       |      76.21±0.14           |      76.30±0.15         |     76.30±0.14 |
-| wrn-40-2/wrn-40-1    | MAS  | 71.98  | 74.09±0.12 | 74.73±0.11 | 75.34±0.13 | 75.46±0.14     | 75.59±0.21    |  75.49±0.20 |                          
-| resnet110/resnet20   | MAS  | 69.06±0.00  |   |   71.52±0.43   |   71.79±0.22   |   71.81±0.29   |   72.31±0.20   |  72.39±0.06  |
+| wrn-40-2/wrn-16-2    | MAS  | 73.25  |74.61±0.15  | 75.81±0.14 | 75.91±0.21 | 76.21±0.14 | 76.30±0.15 | 76.30±0.14 |
+| wrn-40-2/wrn-40-1    | MAS  | 71.98  | 74.09±0.12 | 74.73±0.11 | 75.34±0.13 | 75.46±0.14 | 75.59±0.21 | 75.49±0.20 |                          
+| resnet110/resnet20   | MAS  | 69.06  |            | 71.52±0.43 | 71.79±0.22 | 71.81±0.29 | 72.31±0.20 | 72.39±0.06 |
 | resnet110/resnet32   | MAS  | 71.14    | 72.74±0.02   |  |      |      |      |  74.25±0.07  |
 | vgg13/vgg8    | MAS  |  70.36    |  71.74±0.20  | 73.18±0.10 |   74.47±0.43   |   74.57±0.06   |   74.68±0.24   | 74.59±0.12  |
-| vgg13/MobileNetV2    | MAS  |    |  | |     |      |     |   |
 
 
-2. Teacher and student are of the **same** architectural type.
+2. Performance of distillation vs. size of the augmented dataset when teacher and student are from different architecture.
+
+| Teacher/Student      | Aug  |  0       | 50K | 100k |200k |300k | 400k | 500k |
+| -----------          | ---- | -------  | --- | --- | ---- | ---- | ---- | ---- |
+| vgg13/MobileNetV2    | MAS  |  64.60   | 68.13±0.18  | 69.42±0.39 | 69.26±0.80 | 70.68±0.48 | 69.76±0.65 | 70.49±0.56  |
+
+3. Teacher and student are of the **same** architectural type.
     - MAA: KDA with unsupervised augmentation using averaging
     - MAS: KDA with supervised augmentation using the same Teacher network.  
 
@@ -107,7 +112,7 @@ Performance is measured by classification accuracy (%)
 | MAA|  75.70±0.11     |   75.12±0.31     |   _71.78±0.26_    | _72.26±0.42_ |   73.70±0.32    |   76.17±0.12     |    74.07±0.32   |
 | **MAS**|    **76.30±0.14**   |    **75.49±0.38**   |   _**72.13±0.46**_    | _**72.39±0.06**_ |   **74.25±0.07**    |   **76.92±0.08**    |   **74.59±0.12**    |
 
-3. Teacher and student are of **different** architectural type.
+4. Teacher and student are of **different** architectural type.
 
 | Teacher <br> Student | vgg13 <br> MobileNetV2 | ResNet50 <br> MobileNetV2 | ResNet50 <br> vgg8 | resnet32x4 <br> ShuffleNetV1 | resnet32x4 <br> ShuffleNetV2 | wrn-40-2 <br> ShuffleNetV1 |
 |:---------------:|:-----------------:|:--------------------:|:-------------:|:-----------------------:|:-----------------------:|:---------------------:|
