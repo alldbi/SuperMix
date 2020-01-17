@@ -6,7 +6,7 @@ This repo:
 
 "Contrastive Representation Distillation" (CRD). [Paper](http://arxiv.org/abs/1910.10699), [Project Page](http://hobbitlong.github.io/CRD/).
 
-<div style="text-align:center"><img src="http://hobbitlong.github.io/CRD/CRD_files/teaser.jpg" width="85%" height="85%"></div>  
+![](https://github.com/alldbi/KDA/blob/master/examples/fig.jpg)
 
 <p></p>
 
@@ -72,13 +72,22 @@ Note: the default setting is for a single-GPU training. If you would like to pla
 
 Performance is measured by classification accuracy (%)
 
-1. Performance of distillation vs. size of the augmented dataset.
+1. Performance of distillation vs. size of the augmented dataset when teacher and student are from the same architecture.
 
-| Teacher/Student | Aug  | 0   | 100k | 200k | 300k | 400k | 500k |
-| -----------     | ---- | ----| --- | ---- | ---- | ---- | ---- |
-| <sub> resnet110/resnet20    | MAS  |  69.06    |   71.52±0.43   |   71.79±0.22   |   71.81±0.29   |   72.31±0.20   |  72.39±0.06  |
+| Teacher/Student | Aug  | 0   | 50K | 100k |200k |300k | 400k | 500k |
+| -----------     | ---- | ----| --- | --- | ---- | ---- | ---- | ---- |
+| wrn-40-2/wrn-16-2    | MAS  | 73.25  |74.61±0.15  | 75.81±0.14 | 75.91±0.21 | 76.21±0.14 | 76.30±0.15 | 76.30±0.14 |                     
+| resnet110/resnet20   | MAS  | 69.06  |  71.21±0.13          | 71.52±0.43 | 71.79±0.22 | 71.81±0.29 | 72.31±0.20 | 72.39±0.06 |
+| vgg13/vgg8    | MAS  |  70.36    |  71.74±0.20  | 73.18±0.10 |   74.47±0.43   |   74.57±0.06   |   74.68±0.24   | 74.59±0.12  |
 
-2. Teacher and student are of the **same** architectural type.
+
+2. Performance of distillation vs. size of the augmented dataset when teacher and student are from different architecture.
+
+| Teacher/Student      | Aug  |  0       | 50K | 100k |200k |300k | 400k | 500k |
+| -----------          | ---- | -------  | --- | --- | ---- | ---- | ---- | ---- |
+| vgg13/MobileNetV2    | MAS  |  64.60   | 68.13±0.18  | 69.42±0.39 | 69.26±0.80 | 70.68±0.48 | 69.76±0.65 | 70.49±0.56  |
+
+3. Teacher and student are of the **same** architectural type.
     - MAA: KDA with unsupervised augmentation using averaging
     - MAS: KDA with supervised augmentation using the same Teacher network.  
 
@@ -98,10 +107,11 @@ Performance is measured by classification accuracy (%)
 | FSP  | 72.91 | 0.00 | 69.95 | 70.11 | 71.89 | 72.62 | 70.23 |
 | NST  | 73.68 | 72.24 | 69.60 | 69.53 | 71.96 | 73.30 | 71.53 |
 | CRD  | 75.48 | 74.14 | 71.16 | 71.46 | 73.48 | 75.51 | 73.94 |
-| MAA|  75.70±0.11     |   75.12±0.31     |   _71.78±0.26_    | _72.26±0.42_ |   73.70±0.32    |   76.17±0.12     |    74.07±0.32   |
-| **MAS**|    **76.30±0.14**   |    **75.49±0.38**   |   _**72.13±0.46**_    | _**72.39±0.06**_ |   **74.25±0.07**    |   **76.92±0.08**    |   **74.59±0.12**    |
+| ImgNet| |  |   |    |  |  |  |  | 
+| MixUp|  75.70±0.11     |   75.12±0.31     |   _71.78±0.26_    | _72.26±0.42_ |   73.70±0.32    |   76.17±0.12     |    74.07±0.32   |
+| SuperMix|    **76.30±0.14**   |    **75.49±0.38**   |   _**72.13±0.46**_    | _**72.39±0.06**_ |   **74.25±0.07**    |   **76.92±0.08**    |   **74.59±0.12**    |
 
-3. Teacher and student are of **different** architectural type.
+4. Teacher and student are of **different** architectural type.
 
 | Teacher <br> Student | vgg13 <br> MobileNetV2 | ResNet50 <br> MobileNetV2 | ResNet50 <br> vgg8 | resnet32x4 <br> ShuffleNetV1 | resnet32x4 <br> ShuffleNetV2 | wrn-40-2 <br> ShuffleNetV1 |
 |:---------------:|:-----------------:|:--------------------:|:-------------:|:-----------------------:|:-----------------------:|:---------------------:|
@@ -118,8 +128,8 @@ Performance is measured by classification accuracy (%)
 | FT | 61.78 | 60.99 | 70.29 | 71.75 | 72.50 | 72.03 |
 | NST | 58.16 | 64.96 | 71.28 | 74.12 | 74.68 | 74.89 |
 | CRD | 69.73 | 69.11 | 74.30 | 75.11 | 75.65 | 76.05 |
-| MAA |  **70.53±0.21**  |       |    74.94±0.42  |   77.18±0.19   |   77.99±0.15   |   75.90±0.09     |
-| **MAS** |  70.49±0.56   |    71.69±0.36   |   **75.45±0.08**   |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
+| MixUp |  **70.53±0.21**  |   70.83±0.61    |    74.94±0.42  |   77.18±0.19   |   77.99±0.15   |   75.90±0.09     |
+| SuperMix |  70.49±0.56   |    **71.69±0.36**   |   **75.45±0.08**   |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
 ## Citation
 
 If you find this repo useful for your research, please consider citing the paper
