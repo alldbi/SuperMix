@@ -12,7 +12,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:2', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:20', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
