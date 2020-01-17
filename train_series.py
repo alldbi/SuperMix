@@ -29,12 +29,12 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='wrn_16_2',
-                        choices=['resnet8', 'resnet14', '0', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
+    parser.add_argument('--model_s', type=str, default='vgg8',
+                        choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2'])
-    parser.add_argument('--path_t', type=str, default='./save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/vgg13_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
 
     # distillation
@@ -44,12 +44,17 @@ def parse_option():
 
     # parser.add_argument('--aug', type=str, default=None,
     #                     help='address of the augmented dataset')
-    parser.add_argument('--aug', type=str, default='/home/lab320/dataset/cifar_augmented_kl^3/out_imgnet',
-                        help='address of the augmented dataset')
-    parser.add_argument('--aug_size', type=str, default=500000,
-                        help='size of the augmented dataset, -1 means the maximum possible size')
 
-    parser.add_argument('--trial', type=str, default='withwarmpup', help='trial id')
+    # augmentation parameters
+    parser.add_argument('--aug_type', type=str, default='mixup', choices=[None, 'mixup', 'cropmix', 'supermix'],
+                        help='type of augmentation')
+    parser.add_argument('--aug_dir', type=str, default='/home/aldb/outputs/out_avg',
+                        help='address of the augmented dataset')
+    parser.add_argument('--aug_size', type=str, default=-1,
+                        help='size of the augmented dataset, -1 means the maximum possible size')
+    parser.add_argument('--aug_lambda', type=float, default=0.5, help='lambda for mixup, must be between 0 and 1')
+
+    parser.add_argument('--trial', type=str, default='augmented', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=0, help='weight balance for KD')
@@ -69,7 +74,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=505, type=int, help='random seed')
+    parser.add_argument('--seed', default=7, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -86,27 +91,27 @@ def parse_option():
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-
-
     return opt
 
 
 if __name__ == '__main__':
     aug_size_list = [50000, 100000, 200000, 300000, 400000]
-
-    for a in aug_size_list:
+    aug_lambda = [0.5, 0.4, 0.3, 0.2, 0.1]
+    for a in aug_lambda:
         opt = parse_option()
-        opt.aug_size = a
-        opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset,
-                                                                                opt.distill, opt.aug[-7:],
-                                                                                opt.gamma, opt.alpha, opt.beta,
-                                                                                opt.trial,
-                                                                                opt.device, opt.seed, opt.aug_size)
+        # opt.aug_size = a
+        opt.aug_lambda = a
+        opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t,
+                                                                                      opt.dataset,
+                                                                                      opt.distill,
+                                                                                      opt.gamma, opt.alpha, opt.beta,
+                                                                                      opt.trial,
+                                                                                      opt.device, opt.seed,
+                                                                                      opt.aug_type,
+                                                                                      opt.aug_lambda,
+                                                                                      opt.aug_size, opt.aug_dir[-7:])
         opt.save_folder = os.path.join(opt.model_path, opt.model_name)
         if not os.path.isdir(opt.save_folder):
             os.makedirs(opt.save_folder)
-
-
-
 
         main(opt)
