@@ -9,7 +9,8 @@ from helper.util import WarmUpLR
 import os
 
 
-def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, device):
+def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, warmup_scheduler):
+    device = opt.device
     """vanilla training"""
     model.train()
 
@@ -21,6 +22,11 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, device)
 
     end = time.time()
     for idx, (input, target) in enumerate(train_loader):
+
+
+        if epoch < 5+1:
+            warmup_scheduler.step()
+
         data_time.update(time.time() - end)
 
         input = input.float()
@@ -98,7 +104,14 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
 
 
     end = time.time()
+
+    t_data = time.time()
+
+    ag_time = 0
     for idx, data_combined in enumerate(train_loader):
+
+        ag_time +=time.time()-t_data
+
         if epoch < 5+1:
             warmup_scheduler.step()
 
@@ -251,8 +264,12 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
                 epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr,
                 batch_time.avg * opt.print_freq))
 
+            print(ag_time)
+            ag_time = 0
+
+
         if idx % opt.test_freq == 0 and idx > 0:
-            test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt, device)
+            test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt)
             model_s.train()
             if test_acc > best_acc:
                 best_acc = test_acc
@@ -274,10 +291,13 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             batch_time.reset()
             end = time.time()
 
+        t_data = time.time()
+
     return best_acc
 
 
-def validate(val_loader, model, criterion, opt, device):
+def validate(val_loader, model, criterion, opt):
+    device = opt.device
     """validation"""
     batch_time = AverageMeter()
     losses = AverageMeter()
