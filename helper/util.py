@@ -4,6 +4,55 @@ import torch
 import numpy as np
 import datetime, os
 from torch.optim.lr_scheduler import _LRScheduler
+from torch.utils.data import Dataset
+from PIL import Image
+import matplotlib.pyplot as plt
+
+
+class AugDataset(Dataset):
+    def __init__(self, root_dir, size=500000, transforms=None):
+        for i in range(4):
+
+            dict = np.load(root_dir + str(i + 1), allow_pickle=True)
+            data = dict['data']
+            if i == 0:
+                x = data
+            else:
+                x = np.concatenate((x, data), 0)
+
+        x = x.reshape(-1, 3, 32, 32)
+
+        x = x[0:size, ...]
+
+        self.data = x
+        self.transforms = transforms
+
+    def __len__(self):
+        return self.data.shape[0]
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        # img = self.transforms(self.data[idx, ...])
+        # print(img)
+        # exit()
+        img = self.data[idx, ...]
+        img = img.transpose(1, 2, 0)
+        img = Image.fromarray(img)
+        img = self.transforms(img)
+        sample = {'image': img, 'target': 0}
+
+        return sample
+
+
+# augset = AugDataset('/media/aldb/DATA1/DATABASE/imagenet32x32/Imagenet32_train/train_data_batch_')
+#
+# print(len(augset))
+# exit()
+
+
+
 
 
 def adjust_learning_rate_new(epoch, optimizer, LUT):
@@ -130,6 +179,20 @@ class WarmUpLR(_LRScheduler):
         rate to base_lr * m / total_iters
         """
         return [base_lr * self.last_epoch / (self.total_iters + 1e-8) for base_lr in self.base_lrs]
+
+
+def normalize01(x):
+    x = (x - x.min()) / (x.max() - x.min())
+    return x
+
+
+def plot_tensor(tensor_list):
+    for i, t in enumerate(tensor_list):
+        t_np = t.detach().cpu().numpy().transpose(1, 2, 0)
+        t_np = normalize01(t_np)
+        plt.subplot(1, len(tensor_list), i+1)
+        plt.imshow(t_np)
+    plt.show()
 
 
 if __name__ == '__main__':

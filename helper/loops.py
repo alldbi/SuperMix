@@ -5,6 +5,7 @@ import time
 import torch
 
 from .util import AverageMeter, accuracy
+from helper.util import plot_tensor
 from helper.util import WarmUpLR
 import os
 
@@ -23,8 +24,7 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, warmup_
     end = time.time()
     for idx, (input, target) in enumerate(train_loader):
 
-
-        if epoch < 5+1:
+        if epoch < 5 + 1:
             warmup_scheduler.step()
 
         data_time.update(time.time() - end)
@@ -101,8 +101,6 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
     kdm = AverageMeter()
     otherm = AverageMeter()
 
-
-
     end = time.time()
 
     t_data = time.time()
@@ -110,15 +108,15 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
     ag_time = 0
     for idx, data_combined in enumerate(train_loader):
 
-        ag_time +=time.time()-t_data
+        ag_time += time.time() - t_data
 
-        if epoch < 5+1:
+        if epoch < 5 + 1:
             warmup_scheduler.step()
 
         model_s.train()
         model_t.eval()
 
-        if opt.aug is None:
+        if opt.aug_type is None:
             data = data_combined
         else:
             data = data_combined[0]
@@ -128,21 +126,37 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             input, target, index, contrast_idx = data
         else:
             input, target, index = data
-            if opt.aug is not None:
+            if opt.aug_type is not None:
                 input_aug = data_aug[0]
 
         input = input.float()
         input = input.to(device)
         target = target.to(device)
         index = index.to(device)
+        bs = input.size(0)
 
         if opt.distill in ['crd']:
             contrast_idx = contrast_idx.to(device)
 
-        if opt.aug is not None:
+        if opt.aug_type is not None:
             input_aug = input_aug.to(device)
+            # construct augmentation samples using mixup or cropmix
+            if opt.aug_type == 'mixup':
 
-        bs = input.size(0)
+                if opt.aug_lambda > 0:
+                    # comput mixup samples using fixed lambda
+
+                    # shift samples in the batch to make pairs
+                    idx_aug = torch.arange(bs)
+                    idx_aug[0:bs - 1] = idx_aug[1:bs]
+                    idx_aug[-1] = 0
+                    input_aug_b = input_aug[idx_aug]
+
+                    input_aug = opt.aug_lambda * input_aug + (1 - opt.aug_lambda) * input_aug_b
+
+                    # plot_tensor([input[0], input_aug[0], input_aug_b[0], input_aug_mix[0]])
+
+                    # exit()
 
         # ===================forward=====================
         preact = False
@@ -156,7 +170,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             feat_t = [f.detach() for f in feat_t]
 
         # compute the predicted label of the teacher for the augmented samples
-        if opt.aug is not None:
+        if opt.aug_type is not None:
             logit_aug_t = model_t(input_aug)
             logit_aug_s = model_s(input_aug)
             pred_lbl_t = logit_aug_t.argmax(1)
@@ -165,7 +179,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         loss_cls_nat = criterion_cls(logit_s, target)
 
         loss_cls_aug = 0
-        if opt.aug is not None:
+        if opt.aug_type is not None:
             loss_cls_aug = criterion_cls(logit_aug_s, pred_lbl_t)
 
         loss_cls = loss_cls_nat + loss_cls_aug
@@ -263,10 +277,6 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, T: %.1f' % (
                 epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr,
                 batch_time.avg * opt.print_freq))
-
-            print(ag_time)
-            ag_time = 0
-
 
         if idx % opt.test_freq == 0 and idx > 0:
             test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt)

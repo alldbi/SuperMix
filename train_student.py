@@ -32,7 +32,6 @@ import numpy as np
 
 
 def parse_option():
-
     parser = argparse.ArgumentParser('argument for training')
 
     parser.add_argument('--print_freq', type=int, default=50, help='print frequency')
@@ -56,12 +55,12 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='resnet20',
+    parser.add_argument('--model_s', type=str, default='MobileNetV2',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2'])
-    parser.add_argument('--path_t', type=str, default='./save/models/resnet110_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/ResNet50_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
 
     # distillation
@@ -71,12 +70,17 @@ def parse_option():
 
     # parser.add_argument('--aug', type=str, default=None,
     #                     help='address of the augmented dataset')
-    parser.add_argument('--aug', type=str, default='/home/aldb/outputs/out_avg',
-                        help='address of the augmented dataset')
-    parser.add_argument('--aug_size', type=str, default=500000,
-                        help='size of the augmented dataset, -1 means the maximum possible size')
 
-    parser.add_argument('--trial', type=str, default='extended', help='trial id')
+    # augmentation parameters
+    parser.add_argument('--aug_type', type=str, default='mixup', choices=[None, 'mixup', 'cropmix', 'supermix'],
+                        help='type of augmentation')
+    parser.add_argument('--aug_dir', type=str, default='/home/aldb/outputs/out_avg',
+                        help='address of the augmented dataset')
+    parser.add_argument('--aug_size', type=str, default=-1,
+                        help='size of the augmented dataset, -1 means the maximum possible size')
+    parser.add_argument('--aug_lambda', type=float, default=0.5, help='lambda for mixup, must be between 0 and 1')
+
+    parser.add_argument('--trial', type=str, default='augmented', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=0, help='weight balance for KD')
@@ -96,7 +100,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=779, type=int, help='random seed')
+    parser.add_argument('--seed', default=7, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -113,10 +117,13 @@ def parse_option():
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset,
-                                                                            opt.distill, opt.aug[-7:],
-                                                                            opt.gamma, opt.alpha, opt.beta, opt.trial,
-                                                                            opt.device, opt.seed, opt.aug_size)
+    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t, opt.dataset,
+                                                                               opt.distill, opt.aug_dir[-7:],
+                                                                               opt.gamma, opt.alpha, opt.beta,
+                                                                               opt.trial,
+                                                                               opt.device, opt.seed, opt.aug_type,
+                                                                               opt.aug_lambda,
+                                                                               opt.aug_size)
 
     # opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
     # if not os.path.isdir(opt.tb_folder):
@@ -127,7 +134,6 @@ def parse_option():
         os.makedirs(opt.save_folder)
 
     return opt
-
 
 
 def load_teacher(model_path, n_cls):
@@ -305,7 +311,7 @@ def main(opt):
     warmup_scheduler = WarmUpLR(optimizer, len(train_loader) * 5)
 
     # validate teacher accuracy
-    teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt, device)
+    teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt)
     print('teacher accuracy: ', teacher_acc, '\n')
 
     # creat logger

@@ -5,6 +5,7 @@ import torch
 import socket
 import numpy as np
 import torchvision
+from helper.util import AugDataset
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PIL import Image
@@ -21,15 +22,19 @@ std = {
 
 
 class ConcatDataset(torch.utils.data.Dataset):
-    def __init__(self, *datasets, len):
+    def __init__(self, *datasets, len, opt):
         self.datasets = datasets
         self.len = len
+        self.opt = opt
 
     def __getitem__(self, i):
         res = []
-        for d in self.datasets:
+        for j, d in enumerate(self.datasets):
             l = min(len(d), self.len)
             # print(l)
+
+            if self.opt.aug_type == 'mixup' and j == 1:
+                i += self.opt.batch_size * 10
             res.append(d[i % l])
 
         # return tuple(d[i % len(d)] for d in self.datasets)
@@ -109,27 +114,38 @@ def get_cifar100_dataloaders(opt, is_instance=False):
                                       train=True,
                                       transform=train_transform)
 
-    "load the augmented dataset"
-    if opt.aug is not None:
+    # prepare the augmentation dataset
+    if opt.aug_type is not None:
         train_transform_aug = transforms.Compose([
             transforms.RandomCrop(32, padding=2),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
         ])
-        train_set_aug = torchvision.datasets.ImageFolder(
-            root=opt.aug,
-            transform=train_transform_aug
-        )
-        if opt.aug_size == -1:
-            # max(len(d) for d in self.datasets)
-            opt.aug_size = max(len(train_set), len(train_set_aug))
-            opt.aug_size -= opt.aug_size % 100
 
-        print("size of the training set: ", opt.aug_size)
+        if opt.aug_type == 'superaug':
+            train_set_aug = torchvision.datasets.ImageFolder(
+                root=opt.aug,
+                transform=train_transform_aug
+            )
+            if opt.aug_size == -1:
+                # max(len(d) for d in self.datasets)
+                opt.aug_size = max(len(train_set), len(train_set_aug))
+                opt.aug_size -= opt.aug_size % 100
+
+
+        elif opt.aug_type == 'mixup':
+            train_set_aug = datasets.CIFAR100(root=data_folder,
+                                              download=True,
+                                              train=True,
+                                              transform=train_transform)
+
+            opt.aug_size = 50000
+
+            print("size of the training set: ", opt.aug_size)
 
         train_loader = torch.utils.data.DataLoader(
-            ConcatDataset(train_set, train_set_aug, len=opt.aug_size), batch_size=opt.batch_size, shuffle=True,
+            ConcatDataset(train_set, train_set_aug, len=opt.aug_size, opt=opt), batch_size=opt.batch_size, shuffle=True,
             num_workers=opt.num_workers, pin_memory=True)
     else:
         train_loader = DataLoader(train_set,
@@ -146,6 +162,8 @@ def get_cifar100_dataloaders(opt, is_instance=False):
                              batch_size=opt.batch_size,
                              shuffle=False,
                              num_workers=opt.num_workers)
+
+    print("size of the augment set: ", opt.aug_size)
 
     if is_instance:
         return train_loader, test_loader, n_data
