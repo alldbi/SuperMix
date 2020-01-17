@@ -142,8 +142,6 @@ def get_cifar100_dataloaders(opt, is_instance=False):
 
             opt.aug_size = 50000
 
-            print("size of the training set: ", opt.aug_size)
-
         train_loader = torch.utils.data.DataLoader(
             ConcatDataset(train_set, train_set_aug, len=opt.aug_size, opt=opt), batch_size=opt.batch_size, shuffle=True,
             num_workers=opt.num_workers, pin_memory=True)
