@@ -78,12 +78,14 @@ def parse_option():
                         help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=-1,
                         help='size of the augmented dataset, -1 means the maximum possible size')
-    parser.add_argument('--aug_lambda', type=float, default=0.5, help='lambda for mixup, must be between 0 and 1')
+    parser.add_argument('--aug_lambda', type=float, default=-1, help='lambda for mixup, must be between 0 and 1')
+    parser.add_argument('--aug_alpha', type=float, default=0.5,
+                        help='alpha for the beta distribution to sample the lambda, this is active when --aug_lambda is -1')
 
     parser.add_argument('--trial', type=str, default='augmented', help='trial id')
 
-    parser.add_argument('-r', '--gamma', type=float, default=2, help='weight for classification')
-    parser.add_argument('-a', '--alpha', type=float, default=0, help='weight balance for KD')
+    parser.add_argument('-r', '--gamma', type=float, default=0.2, help='weight for classification')
+    parser.add_argument('-a', '--alpha', type=float, default=1.8, help='weight balance for KD')
     parser.add_argument('-b', '--beta', type=float, default=0, help='weight balance for other losses')
 
     # KL distillation
@@ -117,15 +119,17 @@ def parse_option():
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t,
-                                                                                  opt.dataset,
-                                                                                  opt.distill,
-                                                                                  opt.gamma, opt.alpha, opt.beta,
-                                                                                  opt.trial,
-                                                                                  opt.device, opt.seed,
-                                                                                  opt.aug_type,
-                                                                                  opt.aug_lambda,
-                                                                                  opt.aug_size, opt.aug_dir[-7:])
+    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_T:{}'.format(
+        opt.model_s, opt.model_t,
+        opt.dataset,
+        opt.distill,
+        opt.gamma, opt.alpha, opt.beta,
+        opt.trial,
+        opt.device, opt.seed,
+        opt.aug_type,
+        opt.aug_lambda,
+        opt.aug_alpha,
+        opt.aug_size, opt.kd_T)
 
     # opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
     # if not os.path.isdir(opt.tb_folder):

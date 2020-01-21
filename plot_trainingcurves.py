@@ -106,18 +106,20 @@ f1 = '/home/lab320/github/KDA/txt_files/resnet20.txt'
 acc_test_orig = get_val([f1])
 acc_train_orig = get_val([f1], 'acc_train:')
 
+acc_test_orig[0:200] = (acc_test_orig[0:200]+acc_test_orig[1:201])/2
+
 
 fig, ax = plt.subplots(figsize=(8, 6), dpi=180)
 
 # set_size(10, 10, ax)
-ax.plot(100 - acc_test_orig, '-k', label='orig')
-ax.plot(100 - acc_train_orig, '--k')
-ax.plot(100 - acc_test_imgnet, '-r', label='ImageNet32x32')
-ax.plot(100 - acc_train_imgnet, '--r')
-ax.plot(100 - acc_test_mixup, '-b', label='MixUp')
-ax.plot(100 - acc_train_mixup, '--b')
-ax.plot(100 - acc_test_supermix, '-g', label='SuperMix')
-ax.plot(100 - acc_train_supermix, '--g')
+ax.plot(100 - acc_test_orig, '-k', label='orig', linewidth=2)
+ax.plot(100 - acc_train_orig, '--k', linewidth=2)
+ax.plot(100 - acc_test_imgnet, '-r', label='ImageNet32x32', linewidth=2)
+ax.plot(100 - acc_train_imgnet, '--r', linewidth=2)
+ax.plot(100 - acc_test_mixup, '-b', label='MixUp', linewidth=2)
+ax.plot(100 - acc_train_mixup, '--b', linewidth=2)
+ax.plot(100 - acc_test_supermix, '-g', label='SuperMix', linewidth=2)
+ax.plot(100 - acc_train_supermix, '--g', linewidth=2)
 
 
 ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
@@ -146,20 +148,24 @@ ax1 = plt.axes([0.4, 0.42, 0.5, 0.4])
 ax.plot([rec1_x, rec2_x + 1], [rec1_y + rec1_h, rec2_y], '-k', linewidth=1)
 ax.plot([rec1_x + rec1_w, rec2_x + rec2_w], [rec1_y + rec1_h, rec2_y], '-k', linewidth=1)
 
+ax.set_xticks([0, 200, 300, 400, 500, 600])
 
 for tick in ax.xaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
+                tick.label.set_fontsize(16)
 
 for tick in ax.yaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
+                tick.label.set_fontsize(16)
 
-ax.set_xlabel('Epoch', fontsize=14)
-ax.set_ylabel('Accuracy', fontsize=14)
+ax.set_xlabel('Epoch', fontsize=18)
+ax.set_ylabel('Test error', fontsize=18)
+ax.spines['right'].set_visible(False)
+ax.spines['top'].set_visible(False)
+
 
 epoch = 401
-ax1.plot(100 - acc_test_imgnet[epoch:], '-r', label='ImageNet32x32')
-ax1.plot(100 - acc_test_mixup[epoch:], '-b', label='MixUp')
-ax1.plot(100 - acc_test_supermix[epoch:], '-g', label='SuperMix')
+ax1.plot(100 - acc_test_imgnet[epoch:], '-r', label='ImageNet32x32', linewidth=2)
+ax1.plot(100 - acc_test_mixup[epoch:], '-b', label='MixUp', linewidth=2)
+ax1.plot(100 - acc_test_supermix[epoch:], '-g', label='SuperMix', linewidth=2)
 ax1.axis('off')
 
 

@@ -12,7 +12,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:20', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
@@ -52,7 +52,9 @@ def parse_option():
                         help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=-1,
                         help='size of the augmented dataset, -1 means the maximum possible size')
-    parser.add_argument('--aug_lambda', type=float, default=0.5, help='lambda for mixup, must be between 0 and 1')
+    parser.add_argument('--aug_lambda', type=float, default=-1, help='lambda for mixup, must be between 0 and 1')
+    parser.add_argument('--aug_alpha', type=float, default=0.5,
+                        help='alpha for the beta distribution to sample the lambda, this is active when --aug_lambda is -1')
 
     parser.add_argument('--trial', type=str, default='augmented', help='trial id')
 
@@ -74,7 +76,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=7, type=int, help='random seed')
+    parser.add_argument('--seed', default=19, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -96,20 +98,31 @@ def parse_option():
 
 if __name__ == '__main__':
     aug_size_list = [50000, 100000, 200000, 300000, 400000]
-    aug_lambda = [0.5, 0.4, 0.3, 0.2, 0.1]
-    for a in aug_lambda:
+    aug_lambda = [0.4, 0.3, 0.2, 0.1]
+    aug_alpha = [0.1, 0.5, 1, 5, 10, 15]
+
+    gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
+
+    for g in gamma:
         opt = parse_option()
         # opt.aug_size = a
-        opt.aug_lambda = a
-        opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_{}_{}_{}'.format(opt.model_s, opt.model_t,
-                                                                                      opt.dataset,
-                                                                                      opt.distill,
-                                                                                      opt.gamma, opt.alpha, opt.beta,
-                                                                                      opt.trial,
-                                                                                      opt.device, opt.seed,
-                                                                                      opt.aug_type,
-                                                                                      opt.aug_lambda,
-                                                                                      opt.aug_size, opt.aug_dir[-7:])
+        opt.aug_alpha = 1
+        opt.aug_lambda = -1
+        opt.gamma = g * 2
+        opt.alpha = 1 * 2 - g * 2
+
+        opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_T:{}'.format(
+            opt.model_s, opt.model_t,
+            opt.dataset,
+            opt.distill,
+            opt.gamma, opt.alpha, opt.beta,
+            opt.trial,
+            opt.device, opt.seed,
+            opt.aug_type,
+            opt.aug_lambda,
+            opt.aug_alpha,
+            opt.aug_size, opt.kd_T)
+
         opt.save_folder = os.path.join(opt.model_path, opt.model_name)
         if not os.path.isdir(opt.save_folder):
             os.makedirs(opt.save_folder)

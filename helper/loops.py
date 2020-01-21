@@ -5,9 +5,8 @@ import time
 import torch
 
 from .util import AverageMeter, accuracy
-from helper.util import plot_tensor
-from helper.util import WarmUpLR
 import os
+import numpy as np
 
 
 def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, warmup_scheduler):
@@ -142,17 +141,22 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             input_aug = input_aug.to(device)
             # construct augmentation samples using mixup or cropmix
             if opt.aug_type == 'mixup':
-
+                # shift samples in the batch to make pairs
+                idx_aug = torch.arange(bs)
+                idx_aug[0:bs - 1] = idx_aug[1:bs]
+                idx_aug[-1] = 0
+                input_aug_b = input_aug[idx_aug]
                 if opt.aug_lambda > 0:
-                    # comput mixup samples using fixed lambda
-
-                    # shift samples in the batch to make pairs
-                    idx_aug = torch.arange(bs)
-                    idx_aug[0:bs - 1] = idx_aug[1:bs]
-                    idx_aug[-1] = 0
-                    input_aug_b = input_aug[idx_aug]
-
+                    # compute mixup samples using fixed lambda
                     input_aug = opt.aug_lambda * input_aug + (1 - opt.aug_lambda) * input_aug_b
+                elif opt.aug_lambda == -1:
+                    # compute mixup samples using the beta distribution
+                    lambda_aug = np.random.beta(opt.aug_alpha, opt.aug_alpha, size=[bs, 1, 1, 1])
+                    lambda_aug = torch.from_numpy(lambda_aug).type(torch.FloatTensor).to(opt.device)
+                    input_aug = lambda_aug * input_aug + (1 - lambda_aug) * input_aug_b
+
+
+
 
                     # plot_tensor([input[0], input_aug[0], input_aug_b[0], input_aug_mix[0]])
 
@@ -173,19 +177,22 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         if opt.aug_type is not None:
             logit_aug_t = model_t(input_aug)
             logit_aug_s = model_s(input_aug)
-            pred_lbl_t = logit_aug_t.argmax(1)
+            # pred_lbl_t = logit_aug_t.argmax(1)
 
         # cls + kl div
         loss_cls_nat = criterion_cls(logit_s, target)
 
-        loss_cls_aug = 0
-        if opt.aug_type is not None:
-            loss_cls_aug = criterion_cls(logit_aug_s, pred_lbl_t)
+        # loss_cls_aug = 0
+        # if opt.aug_type is not None:
+        #     loss_cls_aug = criterion_cls(logit_aug_s, pred_lbl_t)
 
-        loss_cls = loss_cls_nat + loss_cls_aug
+        loss_cls = loss_cls_nat  # + loss_cls_aug
 
         if opt.alpha > 0:
-            loss_div = criterion_div(logit_s, logit_t)
+            if opt.aug_type is not None:
+                loss_div = criterion_div(logit_aug_s, logit_aug_t)
+            else:
+                loss_div = criterion_div(logit_s, logit_t)
         else:
             loss_div = torch.zeros([1])
             loss_div = loss_div.to(device)
@@ -274,7 +281,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         if idx % opt.print_freq == 0 and idx > 0:
             for param_group in optimizer.param_groups:
                 lr = param_group['lr']
-            print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, T: %.1f' % (
+            print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, time: %.1f' % (
                 epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr,
                 batch_time.avg * opt.print_freq))
 
