@@ -34,7 +34,7 @@ import numpy as np
 def parse_option():
     parser = argparse.ArgumentParser('argument for training')
 
-    parser.add_argument('--print_freq', type=int, default=50, help='print frequency')
+    parser.add_argument('--print_freq', type=int, default=10, help='print frequency')
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
@@ -130,6 +130,8 @@ def distill(opt):
         opt.lr_decay_epochs.append(int(it))
 
     opt.model_t = get_teacher_name(opt.path_t)
+
+    opt.print_freq = int(50000 / opt.batch_size / opt.print_freq)
 
     opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_T:{}'.format(
         opt.model_s, opt.model_t,
@@ -333,7 +335,7 @@ def distill(opt):
                          device, warmup_scheduler)
         time2 = time.time()
         print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
-        print('Best accuracy: %.2f \n'% (best_acc))
+        print('Best accuracy: %.2f \n' % (best_acc))
 
     if __name__ == '__main__':
         opt = parse_option()
