@@ -119,7 +119,7 @@ def load_teacher(model_path, n_cls):
     return model
 
 
-def main(opt):
+def distill(opt):
     # refine the opt arguments
 
     opt.model_path = './save/student_model'
@@ -318,7 +318,7 @@ def main(opt):
 
     # validate teacher accuracy
     teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt)
-    print('teacher accuracy: ', teacher_acc, '\n')
+    print('teacher accuracy: %.2f \n' % (teacher_acc))
 
     # creat logger
     logger = Logger(dir=opt.save_folder,
@@ -332,11 +332,9 @@ def main(opt):
         best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
                          device, warmup_scheduler)
         time2 = time.time()
-        print('\nepoch {}, total time {:.2f}\n'.format(epoch, time2 - time1))
+        print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
+        print('Best accuracy: %.2f \n'% (best_acc))
 
-    print('best accuracy:', best_acc)
-
-
-if __name__ == '__main__':
-    opt = parse_option()
-    main(opt)
+    if __name__ == '__main__':
+        opt = parse_option()
+        distill(opt)

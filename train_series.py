@@ -1,4 +1,4 @@
-from train_student import main
+from train_student import distill
 
 import os
 import argparse
@@ -12,8 +12,8 @@ def parse_option():
     parser.add_argument('--print_freq', type=int, default=50, help='print frequency')
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
-    parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
+    parser.add_argument('--batch_size', type=int, default=512, help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
@@ -31,12 +31,12 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='resnet20',
+    parser.add_argument('--model_s', type=str, default='vgg8',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2'])
-    parser.add_argument('--path_t', type=str, default='./save/models/resnet110_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/vgg13_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
 
     # distillation
@@ -101,4 +101,5 @@ if __name__ == '__main__':
         opt.alpha = 1 * 2 - g * 2
 
         # train the model
-        main(opt)
+        distill(opt)
+        print("DDDDDDDDDDDD")
