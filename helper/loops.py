@@ -109,7 +109,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
 
         ag_time += time.time() - t_data
 
-        if epoch < 5 + 1:
+        if epoch < opt.epochs_warmup + 1:
             warmup_scheduler.step()
 
         model_s.train()
@@ -143,7 +143,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             if opt.aug_type == 'mixup':
                 # shift samples in the batch to make pairs
                 idx_aug = torch.arange(bs)
-                idx_aug[0:bs - 1] = idx_aug[1:bs]
+                idx_aug[0:bs - 1] = idx_aug[1:bs].clone()
                 idx_aug[-1] = 0
                 input_aug_b = input_aug[idx_aug]
                 if opt.aug_lambda > 0:

@@ -38,13 +38,14 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:2', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.1, help='learning rate')
+    parser.add_argument('--epochs_warmpup', type=int, default=5, help='number of epochs for learning rate warm up')
     parser.add_argument('--lr_decay_epochs', type=str, default='200, 300, 400, 500',  # '150, 250, 350, 450',
                         help='where to decay lr, can be a list')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
@@ -106,9 +107,20 @@ def parse_option():
 
     opt = parser.parse_args()
 
-    # set different learning rate from these 4 models
-    if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
-        opt.learning_rate = 0.02
+    return opt
+
+
+def load_teacher(model_path, n_cls):
+    print('==> loading teacher model')
+    model_t = get_teacher_name(model_path)
+    model = model_dict[model_t](num_classes=n_cls)
+    model.load_state_dict(torch.load(model_path)['model'])
+    print('==> done')
+    return model
+
+
+def main(opt):
+    # refine the opt arguments
 
     opt.model_path = './save/student_model'
 
@@ -131,33 +143,21 @@ def parse_option():
         opt.aug_alpha,
         opt.aug_size, opt.kd_T)
 
-    # opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
-    # if not os.path.isdir(opt.tb_folder):
-    #     os.makedirs(opt.tb_folder)
-
     opt.save_folder = os.path.join(opt.model_path, opt.model_name)
     if not os.path.isdir(opt.save_folder):
         os.makedirs(opt.save_folder)
 
-    return opt
+    opt.learning_rate = 0.1 * opt.batch_size / 128
 
+    # set different learning rate from these 4 models
+    if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
+        opt.learning_rate = opt.learning_rate / 5
 
-def load_teacher(model_path, n_cls):
-    print('==> loading teacher model')
-    model_t = get_teacher_name(model_path)
-    model = model_dict[model_t](num_classes=n_cls)
-    model.load_state_dict(torch.load(model_path)['model'])
-    print('==> done')
-    return model
+    print("learning rate is set to:", opt.learning_rate)
 
-
-def main(opt):
     best_acc = 0
     np.random.seed(opt.seed)
     torch.manual_seed(opt.seed)
-
-    # tensorboard logger
-    # logger = tb_logger.Logger(logdir=opt.tb_folder, flush_secs=2)
 
     # dataloader
     if opt.dataset == 'cifar100':
@@ -314,7 +314,7 @@ def main(opt):
         cudnn.benchmark = True
 
     # setup warmup
-    warmup_scheduler = WarmUpLR(optimizer, len(train_loader) * 5)
+    warmup_scheduler = WarmUpLR(optimizer, len(train_loader) * opt.epochs_warmup)
 
     # validate teacher accuracy
     teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt)

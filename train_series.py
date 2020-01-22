@@ -5,6 +5,7 @@ import argparse
 from helper.util import get_teacher_name
 
 
+
 def parse_option():
     parser = argparse.ArgumentParser('argument for training')
 
@@ -12,13 +13,14 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.1, help='learning rate')
+    parser.add_argument('--epochs_warmup', type=int, default=5, help='number of epochs for learning rate warm up')
     parser.add_argument('--lr_decay_epochs', type=str, default='200, 300, 400, 500',  # '150, 250, 350, 450',
                         help='where to decay lr, can be a list')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
@@ -29,12 +31,12 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='vgg8',
+    parser.add_argument('--model_s', type=str, default='resnet20',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2'])
-    parser.add_argument('--path_t', type=str, default='./save/models/vgg13_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/resnet110_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
 
     # distillation
@@ -58,8 +60,8 @@ def parse_option():
 
     parser.add_argument('--trial', type=str, default='augmented', help='trial id')
 
-    parser.add_argument('-r', '--gamma', type=float, default=2, help='weight for classification')
-    parser.add_argument('-a', '--alpha', type=float, default=0, help='weight balance for KD')
+    parser.add_argument('-r', '--gamma', type=float, default=0.2, help='weight for classification')
+    parser.add_argument('-a', '--alpha', type=float, default=1.8, help='weight balance for KD')
     parser.add_argument('-b', '--beta', type=float, default=0, help='weight balance for other losses')
 
     # KL distillation
@@ -76,22 +78,9 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=19, type=int, help='random seed')
+    parser.add_argument('--seed', default=7, type=int, help='random seed')
 
     opt = parser.parse_args()
-
-    # set different learning rate from these 4 models
-    if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
-        opt.learning_rate = 0.02
-
-    opt.model_path = './save/student_model'
-
-    iterations = opt.lr_decay_epochs.split(',')
-    opt.lr_decay_epochs = list([])
-    for it in iterations:
-        opt.lr_decay_epochs.append(int(it))
-
-    opt.model_t = get_teacher_name(opt.path_t)
 
     return opt
 
@@ -111,20 +100,5 @@ if __name__ == '__main__':
         opt.gamma = g * 2
         opt.alpha = 1 * 2 - g * 2
 
-        opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_T:{}'.format(
-            opt.model_s, opt.model_t,
-            opt.dataset,
-            opt.distill,
-            opt.gamma, opt.alpha, opt.beta,
-            opt.trial,
-            opt.device, opt.seed,
-            opt.aug_type,
-            opt.aug_lambda,
-            opt.aug_alpha,
-            opt.aug_size, opt.kd_T)
-
-        opt.save_folder = os.path.join(opt.model_path, opt.model_name)
-        if not os.path.isdir(opt.save_folder):
-            os.makedirs(opt.save_folder)
-
+        # train the model
         main(opt)
