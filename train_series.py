@@ -58,7 +58,7 @@ def parse_option():
     parser.add_argument('--aug_alpha', type=float, default=0.5,
                         help='alpha for the beta distribution to sample the lambda, this is active when --aug_lambda is -1')
 
-    parser.add_argument('--trial', type=str, default='augmented', help='trial id')
+    parser.add_argument('--trial', type=str, default='v2', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=0.2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=1.8, help='weight balance for KD')
