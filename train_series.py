@@ -5,7 +5,6 @@ import argparse
 from helper.util import get_teacher_name
 
 
-
 def parse_option():
     parser = argparse.ArgumentParser('argument for training')
 
@@ -20,7 +19,7 @@ def parse_option():
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.1, help='learning rate')
-    parser.add_argument('--epochs_warmup', type=int, default=5, help='number of epochs for learning rate warm up')
+    parser.add_argument('--epochs_warmup', type=int, default=20, help='number of epochs for learning rate warm up')
     parser.add_argument('--lr_decay_epochs', type=str, default='200, 300, 400, 500',  # '150, 250, 350, 450',
                         help='where to decay lr, can be a list')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
@@ -78,7 +77,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=8, type=int, help='random seed')
+    parser.add_argument('--seed', default=10, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -88,17 +87,17 @@ def parse_option():
 if __name__ == '__main__':
     aug_size_list = [50000, 100000, 200000, 300000, 400000]
     aug_lambda = [0.4, 0.3, 0.2, 0.1]
-    aug_alpha = [0.1, 0.5, 1, 5, 10, 15]
+    aug_alpha = [0.1, 0.5, 5, 10, 15]
 
     gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
 
-    for g in gamma:
+    for a in aug_alpha:
         opt = parse_option()
         # opt.aug_size = a
-        opt.aug_alpha = 1
+        opt.aug_alpha = a
         opt.aug_lambda = -1
-        opt.gamma = g * 4
-        opt.alpha = 1 * 4 - g * 4
+        opt.gamma = 0.6
+        opt.alpha = 1.4
 
         # train the model
         distill(opt)
