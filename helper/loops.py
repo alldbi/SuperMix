@@ -112,7 +112,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         if epoch < opt.epochs_warmup + 1:#changed
             000
             warmup_scheduler.step()
-            print("wampupDDDD")
+            print("wampupDDDDddd")
 
         model_s.train()
         model_t.eval()
