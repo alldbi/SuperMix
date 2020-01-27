@@ -34,7 +34,7 @@ import numpy as np
 def parse_option():
     parser = argparse.ArgumentParser('argument for training')
 
-    parser.add_argument('--print_freq', type=int, default=10, help='print frequency')
+    parser.add_argument('--print_freq', type=int, default=5, help='print frequency')
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=512, help='batch_size')
