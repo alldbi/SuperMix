@@ -35,9 +35,26 @@ vgg13_vgg8 = np.array(vgg13_vgg8)
 vgg13_vgg8 = vgg13_vgg8.transpose()
 # alpha = np.arange(7)
 alpha = np.array([0.1, 0.5, 1, 2, 3, 4, 5, 10, 15])
-err_vgg = vgg13_vgg8.std(0)
-err_vgg[err_vgg > 0.1] = 0.1
-vgg13_vgg8 = vgg13_vgg8.mean(0)
+err_vgg_mixup = vgg13_vgg8.std(0)
+err_vgg_mixup[err_vgg_mixup > 0.1] = 0.1
+vgg13_vgg8_mixup = vgg13_vgg8.mean(0)
+
+
+
+
+vgg13_vgg8 = [[74.37, 74.87], [74.50, 74.58], [74.72, 74.75], [74.58, 74.30]]
+
+vgg13_vgg8 = np.array(vgg13_vgg8)
+vgg13_vgg8 = vgg13_vgg8.transpose()
+# alpha = np.arange(7)
+alpha = np.array([0.1, 0.5, 1, 2, 3, 4, 5, 10, 15])
+err_vgg_supermix = vgg13_vgg8.std(0)
+err_vgg_supermix[err_vgg_supermix > 0.1] = 0.1
+vgg13_vgg8_supermix = vgg13_vgg8.mean(0)
+
+
+
+
 
 res110_res20 = [[70.43, 71.46, 72.62, 72.59, 72.23],
                 [70.04, 71.90, 72.41, 72.43, 72.23],
@@ -50,8 +67,14 @@ res110_res20 = res110_res20.mean(0)
 
 alpha = np.arange(9)
 # alpha = np.array([0.1, 0.5, 1, 2, 3, 4, 5, 10, 15])
-ax[0].plot(alpha, vgg13_vgg8, '--o', color='b', label=r'vgg13$\rightarrow$vgg8', markersize=3)
-ax[0].fill_between(alpha, vgg13_vgg8 - err_vgg, vgg13_vgg8 + err_vgg, alpha=0.3, facecolor='b')
+ax[0].plot(alpha, vgg13_vgg8_mixup, '--o', color='b', label=r'vgg13$\rightarrow$vgg8', markersize=3)
+ax[0].fill_between(alpha, vgg13_vgg8_mixup - err_vgg_mixup, vgg13_vgg8_mixup + err_vgg_mixup, alpha=0.3, facecolor='b')
+
+
+alpha = np.array([2, 4, 6,  7])
+# alpha = np.array([0.1, 0.5, 1, 2, 3, 4, 5, 10, 15])
+ax[0].plot(alpha, vgg13_vgg8_supermix, '-o', color='b', label=r'vgg13$\rightarrow$vgg8', markersize=3)
+ax[0].fill_between(alpha, vgg13_vgg8_supermix - err_vgg_supermix, vgg13_vgg8_supermix + err_vgg_supermix, alpha=0.3, facecolor='b')
 
 # alpha = np.array([0, 1, 2, 4, 5])
 # ax[0].plot(alpha, res110_res20, '-o', color='r', label='ResNet', markersize=3)
@@ -68,14 +91,15 @@ ax[0].legend()
 
 # set ax properties
 ax[1].set_xticks(np.arange(5))
-ax[1].set_xticklabels(['0.1', '0.2', '0.3', '0.4', '0.5'])
+ax[1].set_xticklabels(['0.1', '0.5', '1', '5', '10'])
 ax[1].grid(axis='y')
 ax[1].spines['right'].set_visible(False)
 ax[1].spines['top'].set_visible(False)
 ax[1].xaxis.set_label_coords(0.5, -0.14)
 
-vgg13_vgg8 = [[70.41, 73.03, 74.16, 74.18, 73.84],
-              [70.80, 72.55, 74.84, 74.26, 73.97]]
+vgg13_vgg8 = [[71.80, 72.44, 72.30, 71.42, 71.10],
+              [72.18, 71.97, 72.44, 71.39, 71.30],
+              [72.27, 72.52, 72.37, 71.51, 71.20]]
 vgg13_vgg8 = np.array(vgg13_vgg8)
 
 alpha = np.arange(5)
@@ -95,8 +119,8 @@ alpha = np.arange(5)
 err = vgg13_vgg8.std(0)
 vgg13_vgg8 = vgg13_vgg8.mean(0)
 
-ax[1].plot(alpha, vgg13_vgg8, '-o', color='r', label='VGG-newkd', markersize=3)
-ax[1].fill_between(alpha, vgg13_vgg8 - err, vgg13_vgg8 + err, alpha=0.3, facecolor='r')
+# ax[1].plot(alpha, vgg13_vgg8, '-o', color='r', label='VGG-newkd', markersize=3)
+# ax[1].fill_between(alpha, vgg13_vgg8 - err, vgg13_vgg8 + err, alpha=0.3, facecolor='r')
 
 ax[1].set_xlabel(r'$\lambda$', fontsize=14)
 ax[1].legend()

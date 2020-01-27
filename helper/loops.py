@@ -155,9 +155,6 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
                     lambda_aug = torch.from_numpy(lambda_aug).type(torch.FloatTensor).to(opt.device)
                     input_aug = lambda_aug * input_aug + (1 - lambda_aug) * input_aug_b
 
-
-
-
                     # plot_tensor([input[0], input_aug[0], input_aug_b[0], input_aug_mix[0]])
 
                     # exit()
@@ -177,22 +174,22 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         if opt.aug_type is not None:
             logit_aug_t = model_t(input_aug)
             logit_aug_s = model_s(input_aug)
-            # pred_lbl_t = logit_aug_t.argmax(1)
+            pred_lbl_t = logit_aug_t.argmax(1)
 
         # cls + kl div
         loss_cls_nat = criterion_cls(logit_s, target)
 
-        # loss_cls_aug = 0
-        # if opt.aug_type is not None:
-        #     loss_cls_aug = criterion_cls(logit_aug_s, pred_lbl_t)
+        loss_cls_aug = 0
+        if opt.aug_type is not None:
+            loss_cls_aug = criterion_cls(logit_aug_s, pred_lbl_t)
 
-        loss_cls = loss_cls_nat  # + loss_cls_aug
+        loss_cls = loss_cls_nat + loss_cls_aug
 
         if opt.alpha > 0:
-            if opt.aug_type is not None:
-                loss_div = criterion_div(logit_aug_s, logit_aug_t)
-            else:
-                loss_div = criterion_div(logit_s, logit_t)
+            # if opt.aug_type is not None:
+            #     loss_div = criterion_div(logit_aug_s, logit_aug_t)
+            # else:
+            loss_div = criterion_div(logit_s, logit_t)
         else:
             loss_div = torch.zeros([1])
             loss_div = loss_div.to(device)

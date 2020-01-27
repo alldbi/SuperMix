@@ -129,9 +129,9 @@ def get_cifar100_dataloaders(opt, is_instance=False):
             transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
         ])
 
-        if opt.aug_type == 'superaug':
+        if opt.aug_type == 'supermix':
             train_set_aug = torchvision.datasets.ImageFolder(
-                root=opt.aug,
+                root=opt.aug_dir,
                 transform=train_transform_aug
             )
             if opt.aug_size == -1:
