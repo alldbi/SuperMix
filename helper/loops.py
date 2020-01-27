@@ -71,6 +71,15 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt, warmup_
     return top1.avg, losses.avg
 
 
+def convert_time(seconds):
+    seconds = seconds % (24 * 3600)
+    hour = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+    return [hour, minutes, seconds]
+
+
 def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
                   device, warmup_scheduler):
     """One epoch distillation"""
@@ -278,9 +287,16 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         if idx % opt.print_freq == 0 and idx > 0:
             for param_group in optimizer.param_groups:
                 lr = param_group['lr']
-            print('Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, time: %.1f' % (
-                epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr,
-                batch_time.avg * opt.print_freq))
+            # compute the remaining time
+            epoch_remaining = opt.epochs - epoch
+            total_iters_remaining = len(train_loader) * (opt.epochs - epoch + 1) - idx
+            ert = total_iters_remaining * batch_time.avg
+            ert = convert_time(ert)
+
+            print(
+                'Epoch: %d [%03d, %03d], l_xent: %.4f, l_kd: %.4f, l_other: %.4f, acc: %.2f, lr: %.4f, time: %.1f, ert: %d:%02d:%02d' % (
+                    epoch, idx, len(train_loader), xentm.avg, kdm.avg, otherm.avg, top1.avg, lr,
+                    batch_time.avg * opt.print_freq, ert[0], ert[1], ert[2]))
 
         if idx % opt.test_freq == 0 and idx > 0:
             test_acc, tect_acc_top5, test_loss = validate(val_loader, model_s, criterion_cls, opt)
