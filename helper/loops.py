@@ -81,7 +81,7 @@ def convert_time(seconds):
 
 
 def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
-                  device, warmup_scheduler):
+                  device, warmup_scheduler, total_t):
     """One epoch distillation"""
     # set modules as train()
     for module in module_list:
@@ -281,6 +281,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
 
         # ===================meters=====================
         batch_time.update(time.time() - end, 1)
+        total_t += time.time() - end
         end = time.time()
 
         # print info
@@ -289,8 +290,11 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
                 lr = param_group['lr']
             # compute the remaining time
             epoch_remaining = opt.epochs - epoch
-            total_iters_remaining = len(train_loader) * (opt.epochs - epoch + 1) - idx
-            ert = total_iters_remaining * batch_time.avg
+            # total_iters_remaining = len(train_loader) * (opt.epochs - epoch + 1) - idx
+            iters_passed = len(train_loader) * (epoch - 1) + idx
+            iters_remaining = len(train_loader) * (opt.epochs - epoch + 1) - idx
+
+            ert = total_t * iters_remaining / iters_passed
             ert = convert_time(ert)
 
             print(

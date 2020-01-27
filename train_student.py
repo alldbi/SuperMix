@@ -37,7 +37,7 @@ def parse_option():
     parser.add_argument('--print_freq', type=int, default=5, help='print frequency')
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
-    parser.add_argument('--batch_size', type=int, default=512, help='batch_size')
+    parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
     parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
@@ -333,12 +333,13 @@ def distill(opt):
                     var_names=['Epoch', 'l_xent', 'l_kd', 'l_other', 'acc_train', 'acc_test', 'acc_test_best', 'lr'],
                     format=['%02d', '%.4f', '%.4f', '%.4f', '%.2f', '%.2f', '%.2f', '%.6f'], args=opt)
 
+    total_t = 0
     # routine
     for epoch in range(1, opt.epochs + 1):
         adjust_learning_rate(epoch, opt, optimizer)
         time1 = time.time()
         best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
-                         device, warmup_scheduler)
+                         device, warmup_scheduler, total_t)
         time2 = time.time()
         print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
         print('Best accuracy: %.2f \n' % (best_acc))
