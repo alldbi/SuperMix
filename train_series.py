@@ -47,7 +47,7 @@ def parse_option():
     #                     help='address of the augmented dataset')
 
     # augmentation parameters
-    parser.add_argument('--aug_type', type=str, default='supermix', choices=[None, 'mixup', 'cropmix', 'supermix'],
+    parser.add_argument('--aug_type', type=str, default='mixup', choices=[None, 'mixup', 'cropmix', 'supermix'],
                         help='type of augmentation')
     parser.add_argument('--aug_dir', type=str, default='/home/aldb2/aug_dataset/',
                         help='address of the augmented dataset')
