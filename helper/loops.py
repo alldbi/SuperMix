@@ -261,7 +261,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         losses.update(loss.item(), bs)
         top1.update(acc1.item(), bs)
         top5.update(acc5.item(), bs)
-        xentm.update(loss_cls_nat.item(), bs)
+        xentm.update(loss_cls.item(), bs)
         kdm.update(loss_div.item())
         otherm.update(loss_kd)
 
