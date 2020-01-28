@@ -86,7 +86,7 @@ def parse_option():
     parser.add_argument('--trial', type=str, default='augmented', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=2, help='weight for classification')
-    parser.add_argument('-a', '--alpha', type=float, default=1, help='weight balance for KD')
+    parser.add_argument('-a', '--alpha', type=float, default=0, help='weight balance for KD')
     parser.add_argument('-b', '--beta', type=float, default=0, help='weight balance for other losses')
 
     # KL distillation
@@ -338,7 +338,7 @@ def distill(opt):
     for epoch in range(1, opt.epochs + 1):
         adjust_learning_rate(epoch, opt, optimizer)
         time1 = time.time()
-        best_acc = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
+        best_acc, total_t = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
                          device, warmup_scheduler, total_t)
         time2 = time.time()
         print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
