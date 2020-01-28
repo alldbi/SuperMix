@@ -90,10 +90,12 @@ def normalize(x):
     return (x - x.min()) / (x.max() - x.min())
 
 
-def tensor2img(t):
+def tensor2img(t, ismask=False):
     x = t.cpu().detach().numpy().squeeze()
     if len(x.shape) == 3:
         x = x.transpose(1, 2, 0)
+    if ismask:
+        return x
     return normalize(x)
 
 
@@ -244,19 +246,13 @@ def mix_batch(net, data, K, alpha=1, mask_w=16, sigma_grad=2, max_iter=200, tole
     check_mix = check_mix[idx, ...]
     mask_pr = mask_pr[idx, ...]
     pred_mix = pred_mix[idx, ...]
+    data_X = data_X[idx, ...]
 
-    return check_mix, mask_pr, pred_mix, loop_i
+    return check_mix, mask_pr, pred_mix, data_X, loop_i
 
 
 def normalize(x):
     return (x - x.min()) / (x.max() - x.min())
-
-
-def tensor2img(t):
-    x = t.cpu().detach().numpy().squeeze()
-    if len(x.shape) == 3:
-        x = x.transpose(1, 2, 0)
-    return normalize(x)
 
 
 def plott(t_list):
@@ -288,16 +284,41 @@ def augment(plot=True):
             model.zero_grad()
 
             k = 2
-            images_mixed, mask, pred_mix, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.K, mask_w=8, sigma_grad=1,
-                                                           toler=opt.tol)
+            images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k, mask_w=8,
+                                                                   sigma_grad=1,
+                                                                   toler=opt.tol)
 
             n_suc = images_mixed.size(0)
 
             # plot the results
             if plot:
-                n_samples = 2
+                n_samples = 4
 
-                plt.subplot(n_samples, K)
+                for p in range(n_samples):
+                    n_cols = opt.k * 2 + 1
+
+                    # plot mixed images
+                    plt.subplot(n_samples, n_cols, p * n_cols + 1)
+                    plt.imshow(tensor2img(images_mixed[p, ...]))
+                    plt.axis('off')
+                    plt.title('Mixed')
+
+                    # plot input images
+                    for ps in range(opt.k):
+                        plt.subplot(n_samples, n_cols, p * n_cols + 1 + ps + 1)
+                        plt.imshow(tensor2img(data_X[p, ps, ...]))
+                        plt.axis('off')
+                        plt.title('input ' + str(ps))
+
+                    # plot input images
+                    for ps in range(opt.k):
+                        plt.subplot(n_samples, n_cols, p * n_cols + 1 + ps + opt.k + 1)
+                        plt.imshow(tensor2img(mask[p, ps, ...], ismask=True), cmap='jet')
+                        plt.axis('off')
+                        plt.title('mask ' + str(ps))
+
+                plt.show()
+                exit()
 
             for i in range(n_suc):
                 img = images_mixed[i].detach().cpu().numpy().transpose(1, 2, 0)
@@ -350,7 +371,7 @@ if __name__ == '__main__':
                         help='teacher model snapshot')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
     parser.add_argument('--bs', type=int, default=8, help='batch size for dataloader')
-    parser.add_argument('--K', type=int, default=2, help='number of samples to mix')
+    parser.add_argument('--k', type=int, default=2, help='number of samples to mix')
     parser.add_argument('--alpha', type=float, default=1, help='alpha of the beta distribution')
     parser.add_argument('--tol', type=int, default=2,
                         help='tolerance for the number of unsuccessful samples in the batch')
