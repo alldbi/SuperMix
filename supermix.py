@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import copy
+import time
 import matplotlib.pyplot as plt
 import scipy.misc as misc
 from helper.util import get_teacher_name
@@ -263,14 +264,24 @@ def plott(t_list):
     plt.show()
 
 
+def convert_time(seconds):
+    seconds = seconds % (24 * 3600)
+    hour = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+    return [hour, minutes, seconds]
+
+
 def augment(plot=True):
     model.eval()
 
-    n_aug = 500000
+    n_aug = opt.aug_size
     counter = 0
     total_iter = 0
     batch_counter = 0
-    for j in range(30):
+    total_time = 0
+    for j in range(300):
         if counter >= n_aug:
             break
         for batch_index, (images, labels) in enumerate(cifar100_training_loader):
@@ -283,10 +294,14 @@ def augment(plot=True):
 
             model.zero_grad()
 
-            k = 2
+            t0 = time.time()
+
             images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k, mask_w=8,
                                                                    sigma_grad=1,
-                                                                   toler=opt.tol)
+                                                                   toler=opt.tol, max_iter=opt.max_iter)
+
+            delta_t = time.time() - t0
+            total_time += delta_t
 
             n_suc = images_mixed.size(0)
 
@@ -318,7 +333,6 @@ def augment(plot=True):
                         plt.title('mask ' + str(ps))
 
                 plt.show()
-                exit()
 
             for i in range(n_suc):
                 img = images_mixed[i].detach().cpu().numpy().transpose(1, 2, 0)
@@ -334,8 +348,12 @@ def augment(plot=True):
             total_iter += iter
             batch_counter += 1
 
-            print("bach:", batch_index, "n generated:", counter, "iters:", iter,
-                  "avg iters: %.2f" % (total_iter / (batch_counter)))
+            remaining_time = (opt.aug_size - counter) * total_time / counter
+            ert = convert_time(remaining_time)
+
+            print("iter: %d, n_generated: %d, iters: %02d, avg iters: %.2f, time: %.1fs, ert: %d:%d:%02d" % (
+                batch_index, counter, iter, (total_iter / batch_counter), delta_t, ert[0], ert[1],
+                ert[2]))
             if counter > n_aug:
                 return 0
 
@@ -367,13 +385,17 @@ def count_parameters(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path_t', type=str, default='./save/models/vgg13_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
-    parser.add_argument('--bs', type=int, default=8, help='batch size for dataloader')
+    parser.add_argument('--save_dir', type=str, default='/home/aldb/outputs/new2',
+                        help='output directory to save results')
+    parser.add_argument('--bs', type=int, default=100, help='batch size for dataloader')
+    parser.add_argument('--aug_size', type=int, default=500000, help='number of samples to generate')
     parser.add_argument('--k', type=int, default=2, help='number of samples to mix')
+    parser.add_argument('--max_iter', type=int, default=50, help='maximum number of iteration for each batch')
     parser.add_argument('--alpha', type=float, default=1, help='alpha of the beta distribution')
-    parser.add_argument('--tol', type=int, default=2,
+    parser.add_argument('--tol', type=int, default=10,
                         help='tolerance for the number of unsuccessful samples in the batch')
     opt = parser.parse_args()
 
@@ -418,9 +440,14 @@ if __name__ == '__main__':
     acc, _ = eval(device, model)
     print("Teacher accuracy: %.2f" % (acc * 100))
 
-    save_dir = '/home/aldb/outputs/kl_alphaaaaa:' + str(opt.alpha) + '_' + opt.net_name + '/'
+    alpha = [0.5, 1, 3, 5, 15, 10000]
+    alpha.reverse()
+    for a in alpha:
 
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+        opt.alpha = a
+        save_dir = opt.save_dir + '/' + opt.net_name + '_k:' + str(opt.k) + '_alpha:' + str(opt.alpha) + '/data/'
 
-    augment()
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        augment(plot=False)
