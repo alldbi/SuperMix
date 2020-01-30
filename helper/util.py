@@ -52,9 +52,6 @@ class AugDataset(Dataset):
 # exit()
 
 
-
-
-
 def adjust_learning_rate_new(epoch, optimizer, LUT):
     """
     new learning rate schedule according to RotNet
@@ -188,9 +185,11 @@ def normalize01(x):
 
 def plot_tensor(tensor_list):
     for i, t in enumerate(tensor_list):
-        t_np = t.detach().cpu().numpy().transpose(1, 2, 0)
+        t_np = t.detach().cpu().numpy().squeeze()
+        if len(t_np.shape) == 3:
+            t_np = t_np.transpose(1, 2, 0)
         t_np = normalize01(t_np)
-        plt.subplot(1, len(tensor_list), i+1)
+        plt.subplot(1, len(tensor_list), i + 1)
         plt.imshow(t_np)
     plt.show()
 

@@ -3,7 +3,7 @@ from __future__ import print_function, division
 import sys
 import time
 import torch
-
+from helper.util import plot_tensor
 from .util import AverageMeter, accuracy
 import os
 import numpy as np
@@ -136,7 +136,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             input, target, index, contrast_idx = data
         else:
             input, target, index = data
-            if opt.aug_type is not None:
+            if opt.aug_type is not None and opt.aug_type != 'cutmix':
                 input_aug = data_aug[0]
 
         input = input.float()
@@ -149,9 +149,9 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
             contrast_idx = contrast_idx.to(device)
 
         if opt.aug_type is not None:
-            input_aug = input_aug.to(device)
             # construct augmentation samples using mixup or cropmix
             if opt.aug_type == 'mixup':
+                input_aug = input_aug.to(device)
                 # shift samples in the batch to make pairs
                 idx_aug = torch.arange(bs)
                 idx_aug[0:bs - 1] = idx_aug[1:bs].clone()
@@ -165,10 +165,19 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
                     lambda_aug = np.random.beta(opt.aug_alpha, opt.aug_alpha, size=[bs, 1, 1, 1])
                     lambda_aug = torch.from_numpy(lambda_aug).type(torch.FloatTensor).to(opt.device)
                     input_aug = lambda_aug * input_aug + (1 - lambda_aug) * input_aug_b
+            elif opt.aug_type == 'cutmix':
+                input_aug = data_aug[0]
+                mask = data_aug[2].view(bs, 1, 32, 32)
+                input_aug, mask = input_aug.to(device), mask.to(device)
+                # shift samples in the batch to make pairs
+                idx_aug = torch.arange(bs)
+                idx_aug[0:bs - 1] = idx_aug[1:bs].clone()
+                idx_aug[-1] = 0
+                input_aug_b = input_aug[idx_aug]
 
-                    # plot_tensor([input[0], input_aug[0], input_aug_b[0], input_aug_mix[0]])
-
-                    # exit()
+                input_aug = mask * input_aug + (1 - mask) * input_aug_b
+                # for i in range(10):
+                #     plot_tensor([input_aug[i], mask[i]])
 
         # ===================forward=====================
         preact = False
@@ -282,7 +291,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
         optimizer.step()
 
         # ===================meters=====================
-        total_t += time.time()-end
+        total_t += time.time() - end
         batch_time.update(time.time() - end, 1)
         end = time.time()
 

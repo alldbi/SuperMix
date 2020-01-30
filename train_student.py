@@ -20,7 +20,7 @@ from models.util import Connector, Translator, Paraphraser
 
 from dataset.cifar100 import get_cifar100_dataloaders, get_cifar100_dataloaders_sample
 
-from helper.util import adjust_learning_rate, Logger, count_parameters, get_teacher_name, WarmUpLR
+from helper.util import adjust_learning_rate, Logger, count_parameters, get_teacher_name, WarmUpLR, plot_tensor
 
 from distiller_zoo import DistillKL, HintLoss, Attention, Similarity, Correlation, VIDLoss, RKDLoss
 from distiller_zoo import PKT, ABLoss, FactorTransfer, KDSVD, FSP, NSTLoss
@@ -38,7 +38,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
@@ -73,14 +73,14 @@ def parse_option():
     #                     help='address of the augmented dataset')
 
     # augmentation parameters
-    parser.add_argument('--aug_type', type=str, default='supermix', choices=[None, 'mixup', 'cropmix', 'supermix'],
+    parser.add_argument('--aug_type', type=str, default='cutmix', choices=[None, 'mixup', 'cutmix', 'supermix'],
                         help='type of augmentation')
     parser.add_argument('--aug_dir', type=str, default='/home/aldb2/aug_dataset/',
                         help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=-1,
                         help='size of the augmented dataset, -1 means the maximum possible size')
-    parser.add_argument('--aug_lambda', type=float, default=-1, help='lambda for mixup, must be between 0 and 1')
-    parser.add_argument('--aug_alpha', type=float, default=150,
+    parser.add_argument('--aug_lambda', type=float, default=0.5, help='lambda for mixup, must be between 0 and 1')
+    parser.add_argument('--aug_alpha', type=float, default=10000,
                         help='alpha for the beta distribution to sample the lambda, this is active when --aug_lambda is -1')
 
     parser.add_argument('--trial', type=str, default='augmented', help='trial id')
@@ -103,7 +103,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=101, type=int, help='random seed')
+    parser.add_argument('--seed', default=1001, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -117,6 +117,27 @@ def load_teacher(model_path, n_cls):
     model.load_state_dict(torch.load(model_path)['model'])
     print('==> done')
     return model
+
+
+def build_grid(source_size, target_size):
+    k = float(target_size) / float(source_size)
+    direct = torch.linspace(0, k, target_size).unsqueeze(0).repeat(target_size, 1).unsqueeze(-1)
+    full = torch.cat([direct, direct.transpose(1, 0)], dim=2).unsqueeze(0)
+    return full.cuda()
+
+
+def random_crop_grid(x, grid):
+    delta = x.size(2) - grid.size(1)
+    grid = grid.repeat(x.size(0), 1, 1, 1).cuda()
+    # Add random shifts by x
+    grid[:, :, :, 0] = grid[:, :, :, 0] + torch.FloatTensor(x.size(0)).cuda().random_(0, delta).unsqueeze(-1).unsqueeze(
+        -1).expand(-1, grid.size(1), grid.size(2)) / x.size(2)
+    # Add random shifts by y
+    grid[:, :, :, 1] = grid[:, :, :, 1] + torch.FloatTensor(x.size(0)).cuda().random_(0, delta).unsqueeze(-1).unsqueeze(
+        -1).expand(-1, grid.size(1), grid.size(2)) / x.size(2)
+    return grid
+
+
 
 
 def distill(opt):

@@ -33,12 +33,39 @@ class ConcatDataset(torch.utils.data.Dataset):
             l = min(len(d), self.len)
             # print(l)
 
-            if self.opt.aug_type == 'mixup' and j == 1:
+            if (self.opt.aug_type == 'mixup' or self.opt.aug_type == 'cutmix') and j == 1:
                 i += self.opt.batch_size * 10
             res.append(d[i % l])
 
         # return tuple(d[i % len(d)] for d in self.datasets)
         return tuple(res)
+
+    def __len__(self):
+        return self.len  # max(len(d) for d in self.datasets)
+
+
+class DatasetMasked(torch.utils.data.Dataset):
+    def __init__(self, dataset, opt):
+        self.dataset = dataset
+        self.len = len(dataset)
+        self.opt = opt
+
+    def __getitem__(self, i):
+        res = self.dataset[i]  # 3x32x32
+        mask = torch.zeros([32, 32]).type(torch.FloatTensor)
+
+        # set a random square area in the mask to one
+        lambda_aug = np.random.beta(self.opt.aug_alpha, self.opt.aug_alpha)
+
+        s_w = int(32 * np.sqrt(1 - lambda_aug))
+        if s_w == 32:
+            s_w = 31
+        rand = torch.randint(0, 32 - s_w, size=[2])
+
+        mask[rand[0]:rand[0] + s_w, rand[1]:rand[1] + s_w] = 1
+        mask = mask.view(1, 32, 32)
+        # res.append(mask)
+        return res + tuple(mask)  # append the mask to  output
 
     def __len__(self):
         return self.len  # max(len(d) for d in self.datasets)
@@ -68,8 +95,7 @@ class CIFAR100Instance(datasets.CIFAR100):
 
     def __getitem__(self, index):
 
-        if torch.__version__[0]=='0':
-
+        if torch.__version__[0] == '0':
 
             if self.train:
                 img, target = self.train_data[index], self.train_labels[index]
@@ -138,14 +164,19 @@ def get_cifar100_dataloaders(opt, is_instance=False):
                 # max(len(d) for d in self.datasets)
                 opt.aug_size = max(len(train_set), len(train_set_aug))
                 opt.aug_size -= opt.aug_size % 100
-
-
         elif opt.aug_type == 'mixup':
             train_set_aug = datasets.CIFAR100(root=data_folder,
                                               download=True,
                                               train=True,
                                               transform=train_transform)
-
+            opt.aug_size = 50000
+        elif opt.aug_type == 'cutmix':
+            train_set_aug = datasets.CIFAR100(root=data_folder,
+                                              download=True,
+                                              train=True,
+                                              transform=train_transform)
+            # generate masks for the data
+            train_set_aug = DatasetMasked(train_set_aug, opt=opt)
             opt.aug_size = 50000
 
         train_loader = torch.utils.data.DataLoader(
