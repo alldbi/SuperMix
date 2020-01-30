@@ -47,7 +47,7 @@ def parse_option():
     #                     help='address of the augmented dataset')
 
     # augmentation parameters
-    parser.add_argument('--aug_type', type=str, default='mixup', choices=[None, 'mixup', 'cropmix', 'supermix'],
+    parser.add_argument('--aug_type', type=str, default='cutmix', choices=[None, 'mixup', 'cropmix', 'supermix'],
                         help='type of augmentation')
     parser.add_argument('--aug_dir', type=str, default='/home/aldb2/aug_dataset/',
                         help='address of the augmented dataset')
@@ -57,7 +57,7 @@ def parse_option():
     parser.add_argument('--aug_alpha', type=float, default=10,
                         help='alpha for the beta distribution to sample the lambda, this is active when --aug_lambda is -1')
 
-    parser.add_argument('--trial', type=str, default='27jan2020', help='trial id')
+    parser.add_argument('--trial', type=str, default='29jan2020', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=0.2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=1.8, help='weight balance for KD')
@@ -77,7 +77,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=0, type=int, help='random seed')
+    parser.add_argument('--seed', default=4, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -86,11 +86,11 @@ def parse_option():
 
 if __name__ == '__main__':
     aug_size_list = [50000, 100000, 200000, 300000, 400000]
-    aug_lambda = [0.4, 0.3, 0.2, 0.1]
-    aug_alpha = [1, 3, 5, 10, 20]
-    # aug_alpha.reverse()
+    # aug_lambda = [0.4, 0.3, 0.2, 0.1]
+    aug_alpha = [0.1, 0.5, 1, 3, 5, 15, 10000]
+    aug_alpha.reverse()
 
-    gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
+    # gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
 
     for a in aug_alpha:
         opt = parse_option()
