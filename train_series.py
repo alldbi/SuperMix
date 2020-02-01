@@ -12,7 +12,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:2', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
@@ -30,12 +30,12 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='vgg8',
+    parser.add_argument('--model_s', type=str, default='wrn_16_2',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2'])
-    parser.add_argument('--path_t', type=str, default='./save/models/vgg13_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
 
     # distillation
@@ -57,7 +57,7 @@ def parse_option():
     parser.add_argument('--aug_alpha', type=float, default=10,
                         help='alpha for the beta distribution to sample the lambda, this is active when --aug_lambda is -1')
 
-    parser.add_argument('--trial', type=str, default='29jan2020', help='trial id')
+    parser.add_argument('--trial', type=str, default='01Feb2020', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=0.2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=1.8, help='weight balance for KD')
@@ -77,7 +77,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=4, type=int, help='random seed')
+    parser.add_argument('--seed', default=202, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -88,17 +88,44 @@ if __name__ == '__main__':
     aug_size_list = [50000, 100000, 200000, 300000, 400000]
     # aug_lambda = [0.4, 0.3, 0.2, 0.1]
     aug_alpha = [0.1, 0.5, 1, 3, 5, 15, 10000]
-    aug_alpha.reverse()
+    # aug_alpha.reverse()
 
     # gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
 
-    for a in aug_alpha:
+    student_list = [2, 1, 3, 4, 5]
+
+
+
+    for s in student_list:
         opt = parse_option()
         # opt.aug_size = a
-        opt.aug_alpha = a
+        opt.aug_alpha = 3
         opt.aug_lambda = -1
         opt.gamma = 2
         opt.alpha = 0
+        opt.aug_type = 'mixup'
 
+
+        if s==0:
+            opt.model_s = 'wrn_16_2'
+            opt.path_t = './save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth'
+        elif s==1:
+            opt.model_s = 'wrn_40_1'
+            opt.path_t = './save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth'
+        elif s==2:
+            opt.model_s = 'resnet20'
+            opt.path_t = './save/models/resnet56_vanilla/ckpt_epoch_240.pth'
+        elif s==3:
+            opt.model_s = 'resnet20'
+            opt.path_t = './save/models/resnet110_vanilla/ckpt_epoch_240.pth'
+        elif s==4:
+            opt.model_s = 'resnet32'
+            opt.path_t = './save/models/resnet110_vanilla/ckpt_epoch_240.pth'
+        elif s==5:
+            opt.model_s = 'resnet8x4'
+            opt.path_t = './save/models/resnet32x4_vanilla/ckpt_epoch_240.pth'
+        elif s==6:
+            opt.model_s = 'vgg8'
+            opt.path_t = './save/models/vgg13_vanilla/ckpt_epoch_240.pth'
         # train the model
         distill(opt)
