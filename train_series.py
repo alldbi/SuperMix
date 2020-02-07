@@ -12,7 +12,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:2', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
@@ -56,8 +56,12 @@ def parse_option():
     parser.add_argument('--aug_lambda', type=float, default=-1, help='lambda for mixup, must be between 0 and 1')
     parser.add_argument('--aug_alpha', type=float, default=10,
                         help='alpha for the beta distribution to sample the lambda, this is active when --aug_lambda is -1')
+    parser.add_argument('--aug_k', type=float, default=2,
+                        help='number of samples to mix')
 
-    parser.add_argument('--trial', type=str, default='01Feb2020', help='trial id')
+
+
+    parser.add_argument('--trial', type=str, default='06Feb2020', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=0.2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=1.8, help='weight balance for KD')
@@ -77,7 +81,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=403, type=int, help='random seed')
+    parser.add_argument('--seed', default=102, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -92,19 +96,21 @@ if __name__ == '__main__':
 
     # gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
 
-    student_list = [7, 8, 9, 10, 11, 12]
+    student_list = [8, 9, 10, 11, 12]
 
-
-
-    for s in student_list:
+    k_list = [3]
+    k_list.reverse()
+    for k in k_list:
         opt = parse_option()
         # opt.aug_size = a
         opt.aug_alpha = 3
         opt.aug_lambda = -1
         opt.gamma = 2
         opt.alpha = 0
-        opt.aug_type = 'cutmix'
-        opt.trial = "04Feb20"
+        opt.aug_type = 'supermix'
+        opt.trial = "07Feb20"
+        s = 0
+        opt.aug_k = k
 
 
         if s==0:
