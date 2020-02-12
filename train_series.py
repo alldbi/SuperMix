@@ -81,7 +81,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=102, type=int, help='random seed')
+    parser.add_argument('--seed', default=19, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -96,21 +96,21 @@ if __name__ == '__main__':
 
     # gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
 
-    student_list = [8, 9, 10, 11, 12]
+    student_list =range(10, 13)
 
     k_list = [3]
     k_list.reverse()
-    for k in k_list:
+    for s in student_list:
         opt = parse_option()
         # opt.aug_size = a
         opt.aug_alpha = 3
         opt.aug_lambda = -1
-        opt.gamma = 2
-        opt.alpha = 0
-        opt.aug_type = 'supermix'
-        opt.trial = "07Feb20"
-        s = 0
-        opt.aug_k = k
+        opt.gamma = 1
+        opt.alpha = 0.5
+        opt.aug_type = 'mixup'
+        opt.trial = "12Feb20_originit"
+        # s = 0
+        opt.aug_k = 2
 
 
         if s==0:
@@ -142,9 +142,11 @@ if __name__ == '__main__':
         elif s==8:
             opt.model_s = 'MobileNetV2'
             opt.path_t = './save/models/ResNet50_vanilla/ckpt_epoch_240.pth'
+            opt.batch_size=64
         elif s==9:
             opt.model_s = 'vgg8'
             opt.path_t = './save/models/ResNet50_vanilla/ckpt_epoch_240.pth'
+            opt.batch_size = 64
         elif s==10:
             opt.model_s = 'ShuffleV1'
             opt.path_t = './save/models/resnet32x4_vanilla/ckpt_epoch_240.pth'
