@@ -152,17 +152,21 @@ def distill(opt):
 
     if opt.aug_type == 'supermix':
         # opt.aug_dir = opt.aug_dir + opt.model_t + '_alpha:' + str(opt.aug_alpha)+'_better'
-        opt.aug_dir = '/home/mehdi/output/wrn/' + opt.model_t + '_k:'+str(opt.aug_k)+'_alpha:3'
+        # opt.aug_dir = '/media/aldb2/M2/datasets/supermix/alpha3/all/' + opt.model_t + '_k:'+str(opt.aug_k)+'_alpha:3'
+        opt.aug_dir = '/home/aldb2/aug_dataset/vgg_sigma2_size16/vgg13_k:3_alpha:3'
+        opt.aug_dir = '/home/aldb2/aug_dataset/out_imgnet'
+        opt.aug_dir = '/home/aldb2/aug_dataset/fewshot/vgg13_k:2_alpha:3_insize:' + str(opt.orig_size)
         print("Aug dir for supermix:", opt.aug_dir)
     else:
         opt.aug_dir = ''
 
     opt.print_freq = int(50000 / opt.batch_size / opt.print_freq)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_augK:{}_T:{}'.format(
+    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_augK:{}_T:{}'.format(
         opt.model_s, opt.model_t,
         opt.dataset,
         opt.distill,
+        opt.orig_size,
         opt.gamma, opt.alpha, opt.beta,
         opt.trial,
         opt.device, opt.seed,
