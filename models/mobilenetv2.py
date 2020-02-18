@@ -162,10 +162,12 @@ class MobileNetV2(nn.Module):
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels #/ m.groups
+                # print(m.kernel_size[0], m.kernel_size[1], m.in_channels, m.out_channels, m.groups)
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 if m.bias is not None:
                     m.bias.data.zero_()
+
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -173,7 +175,8 @@ class MobileNetV2(nn.Module):
                 n = m.weight.size(1)
                 m.weight.data.normal_(0, 0.01)
                 m.bias.data.zero_()
-
+        print("initializing done!!!")
+        # exit()
 
 def mobilenetv2_T_w(T, W, feature_dim=100):
     model = MobileNetV2(T=T, feature_dim=feature_dim, width_mult=W)

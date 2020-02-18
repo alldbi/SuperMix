@@ -12,11 +12,10 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=40, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
-    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:2', help='batch_size')
     parser.add_argument('--num_workers', type=int, default=2, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
     parser.add_argument('--init_epochs', type=int, default=30, help='init training for two-stage methods')
-    parser.add_argument('--orig_size', type=int, default=50000, help='number of original training samples')
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.1, help='learning rate')
@@ -60,7 +59,9 @@ def parse_option():
     parser.add_argument('--aug_k', type=float, default=2,
                         help='number of samples to mix')
 
-    parser.add_argument('--trial', type=str, default='07Feb2020', help='trial id')
+
+
+    parser.add_argument('--trial', type=str, default='06Feb2020', help='trial id')
 
     parser.add_argument('-r', '--gamma', type=float, default=0.2, help='weight for classification')
     parser.add_argument('-a', '--alpha', type=float, default=1.8, help='weight balance for KD')
@@ -80,7 +81,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=301, type=int, help='random seed')
+    parser.add_argument('--seed', default=102, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -95,68 +96,62 @@ if __name__ == '__main__':
 
     # gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
 
-    student_list = range(7, 13)  # [0, 1, 2, 3, 4, 5, 6]
-    # student_list = [0]
+    student_list = [8, 9, 10, 11, 12]
 
     k_list = [3]
     k_list.reverse()
-    origsizes = [1000, 2000, 5000, 10000]
-
-
-
-    for o in origsizes:
+    for k in k_list:
         opt = parse_option()
         # opt.aug_size = a
         opt.aug_alpha = 3
         opt.aug_lambda = -1
         opt.gamma = 2
-        opt.alpha = 0  # with kd loss
+        opt.alpha = 0
         opt.aug_type = 'supermix'
-        opt.trial = "18Feb20_fewshot"
-        opt.aug_k = 2
-        opt.batch_size=100
-        opt.orig_size = o
-        s = 6
+        opt.trial = "07Feb20"
+        s = 0
+        opt.aug_k = k
 
-        if s == 0:
+
+        if s==0:
             opt.model_s = 'wrn_16_2'
             opt.path_t = './save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth'
-        elif s == 1:
+        elif s==1:
             opt.model_s = 'wrn_40_1'
             opt.path_t = './save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth'
-        elif s == 2:
+        elif s==2:
             opt.model_s = 'resnet20'
             opt.path_t = './save/models/resnet56_vanilla/ckpt_epoch_240.pth'
-        elif s == 3:
+        elif s==3:
             opt.model_s = 'resnet20'
             opt.path_t = './save/models/resnet110_vanilla/ckpt_epoch_240.pth'
-        elif s == 4:
+        elif s==4:
             opt.model_s = 'resnet32'
             opt.path_t = './save/models/resnet110_vanilla/ckpt_epoch_240.pth'
-        elif s == 5:
+        elif s==5:
             opt.model_s = 'resnet8x4'
             opt.path_t = './save/models/resnet32x4_vanilla/ckpt_epoch_240.pth'
-        elif s == 6:
+        elif s==6:
             opt.model_s = 'vgg8'
             opt.path_t = './save/models/vgg13_vanilla/ckpt_epoch_240.pth'
 
         #######################################################
-        elif s == 7:
+        elif s==7:
             opt.model_s = 'MobileNetV2'
             opt.path_t = './save/models/vgg13_vanilla/ckpt_epoch_240.pth'
-        elif s == 8:
+        elif s==8:
             opt.model_s = 'MobileNetV2'
             opt.path_t = './save/models/ResNet50_vanilla/ckpt_epoch_240.pth'
-        elif s == 9:
+        elif s==9:
             opt.model_s = 'vgg8'
             opt.path_t = './save/models/ResNet50_vanilla/ckpt_epoch_240.pth'
-        elif s == 10:
+        elif s==10:
             opt.model_s = 'ShuffleV1'
             opt.path_t = './save/models/resnet32x4_vanilla/ckpt_epoch_240.pth'
-        elif s == 11:
+        elif s==11:
             opt.model_s = 'ShuffleV2'
             opt.path_t = './save/models/resnet32x4_vanilla/ckpt_epoch_240.pth'
-        elif s == 12:
+        elif s==12:
             opt.model_s = 'ShuffleV1'
             opt.path_t = './save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth'
 

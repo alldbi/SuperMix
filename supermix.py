@@ -18,6 +18,7 @@ import scipy.misc as misc
 from helper.util import get_teacher_name
 from models import model_dict
 import math
+import imageio
 
 
 def load_teacher(model_path, n_cls):
@@ -341,7 +342,7 @@ def augment(plot=True):
 
                 img = img.astype(np.uint8)
 
-                misc.imsave(save_dir + '/' + str(counter + i) + '.png', img)
+                imageio.imwrite(save_dir + '/' + str(counter + i) + '.png', img)
 
             counter += n_suc
 
@@ -385,10 +386,10 @@ def count_parameters(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path_t', type=str, default='./save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth',
+    parser.add_argument('--path_t', type=str, default='./save/models/resnet110_vanilla/ckpt_epoch_240.pth',
                         help='teacher model snapshot')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
-    parser.add_argument('--save_dir', type=str, default='/home/aldb/outputs/new2',
+    parser.add_argument('--save_dir', type=str, default='/home/mehdi/output',
                         help='output directory to save results')
     parser.add_argument('--bs', type=int, default=100, help='batch size for dataloader')
     parser.add_argument('--aug_size', type=int, default=500000, help='number of samples to generate')
