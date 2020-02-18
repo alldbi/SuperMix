@@ -10,13 +10,15 @@ fig.set_figheight(3)
 fig.set_figwidth(12)
 fig.set_dpi(200)
 plt.tight_layout()
-fig.subplots_adjust(top=0.92, bottom=0.18, left=0.044, right=0.99)
+fig.subplots_adjust(top=0.92, bottom=0.18, left=0.05, right=0.98)
 
 #############################################################################
 ############ WRN ############################################################
 #############################################################################
 
 # set ax properties
+axi = [0,0]
+
 ax[0].set_xticks([0, 2, 4, 6, 8, 10])
 ax[0].set_xticklabels(['0', '1', '2', '3', '4', '5'])
 ax[0].grid(axis='y')
@@ -49,6 +51,10 @@ wrn402_wrn162_cutmix[1] = wrn402_wrn162_cutmix[1] + 0.5
 err_cutmix = np.array([0.1, 0.2, 0.2, 0.16, 0.2, 0.2, 0.15])
 
 # plot values
+
+ax[0].plot(n, np.ones_like(wrn403_wrn162_imgnet)*75.48, '--', color='m', label='CRD', markersize=6)
+
+
 gray = [0.2, 0.2, 0.2]
 ax[0].plot(n, wrn403_wrn162_sueprmix, '-o', color='r', label='SuperMix', markersize=3)
 ax[0].fill_between(n, wrn403_wrn162_sueprmix - err_supermix, wrn403_wrn162_sueprmix + err_supermix, alpha=0.3,
@@ -66,11 +72,15 @@ ax[0].plot(n, wrn403_wrn162_imgnet, '-o', color='k', label='ImgNet32', markersiz
 ax[0].fill_between(n, wrn403_wrn162_imgnet - err_imgnet, wrn403_wrn162_imgnet + err_imgnet, alpha=0.3,
                    facecolor=gray)
 
+
+
+
 # set ax labels
 ax[0].set_ylabel('Test acc.', fontsize=15)
 ax[0].set_xlabel(r'Aug. size ($\times 10^5$)', fontsize=12)
 ax[0].set_title(r'WRN-40-2$\rightarrow$WRN-16-2')
-ax[0].legend( fontsize=11, borderpad=0.3, loc = "lower right", handletextpad=0.1)
+# ax[0].legend(fontsize=11, borderpad=0.2, loc = "lower right", handletextpad=0.2, ncol=5, columnspacing=1)
+ax[0].legend(fontsize=11, borderpad=0.3, loc = "lower right", handletextpad=0.2, ncol=2, columnspacing=0.5, framealpha=1, handlelength=1.5, markerscale=1, bbox_to_anchor=(1.1, 0.))
 # ax[1].legend()
 # #############################################################################
 # ############ Resnetxx4 ######################################################
@@ -166,6 +176,8 @@ vgg13_vgg8_cutmix = (vgg13_vgg8_imgnet * 1.5 + vgg13_vgg8_sueprmix) / 2.5
 vgg13_vgg8_cutmix[1:] = vgg13_vgg8_cutmix[1:] + 0.3
 
 # plot values
+ax[1].plot(n, np.ones_like(wrn403_wrn162_imgnet)*73.94, '--', color='m', label='CRD', markersize=6)
+
 ax[1].plot(n, vgg13_vgg8_sueprmix, '-o', color='r', label='SuperMix', markersize=3)
 ax[1].fill_between(n, vgg13_vgg8_sueprmix - err_supermix, vgg13_vgg8_sueprmix + err_supermix, alpha=0.3,
                    facecolor=gray)
@@ -202,7 +214,7 @@ ax[2].grid(axis='y')
 ax[2].spines['right'].set_visible(False)
 ax[2].spines['top'].set_visible(False)
 ax[2].xaxis.set_label_coords(0.5, -0.14)
-ax[2].set_xlim([0, 6])
+ax[2].set_xlim([0, 6.2])
 
 # wrn = [[74.46, 74.64], [75.98, 75.41], [75.91, 76.32], [76.40, 76.00], [76.34, 76.13], [76.07, 76.76], [75.78, 75.83]]
 wrn = [[74.46, 74.64], [75.98, 75.41], [75.91, 76.32], [76.40, 76.00], [76.34, 76.13], [76.07, 76.26], [75.78, 75.83]]
@@ -250,8 +262,9 @@ ax[2].plot(alpha, wrn_mixup, '-o', color='g', label=r'MixUp', markersize=3)
 ax[2].fill_between(alpha, wrn_mixup - err_wrn_mixup, wrn_mixup + err_wrn_mixup, alpha=0.3, facecolor=gray)
 
 ax[2].set_xlabel(r'$\alpha$', fontsize=14)
-ax[2].legend()
+# ax[2].legend(fontsize=11, borderpad=0.2, loc = "lower right", handletextpad=0.2, ncol=5, columnspacing=1, bbox_to_anchor=(2.2, 1.13))
 ax[2].set_title(r'WRN-40-2$\rightarrow$WRN-16-2')
+ax[2].legend(fontsize=11, borderpad=0.3, loc = "lower right", handletextpad=0.2, ncol=1, columnspacing=0.5, framealpha=1, handlelength=1.5, markerscale=1, bbox_to_anchor=(0.9, 0.))
 ax[2].set_yticks([75, 76, 77])
 #############################################################################
 ############ acc vs lambda ##################################################
@@ -326,9 +339,9 @@ alpha = np.array([0, 1, 2, 3, 4, 5, 6])
 ax[3].plot(alpha, vgg13_vgg8_cutmix, '-o', color='b', label=r'CutMix', markersize=3)
 ax[3].fill_between(alpha, vgg13_vgg8_cutmix - err_vgg_cutmix, vgg13_vgg8_cutmix + err_vgg_cutmix, alpha=0.3,
                    facecolor=gray)
-
+ax[3].set_xlim([0, 6.2])
 ax[3].set_xlabel(r'$\alpha$', fontsize=14)
 # ax[3].legend()
 ax[3].set_title(r'VGG13$\rightarrow$VGG8')
-
+# ax[3].legend(fontsize=11, borderpad=0.4, loc = "lower right", handletextpad=0.2, ncol=5, columnspacing=1, bbox_to_anchor=(1, 0.1),framealpha=1)
 plt.show()
