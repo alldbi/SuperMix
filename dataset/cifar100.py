@@ -9,6 +9,7 @@ from helper.util import AugDataset
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from PIL import Image
+from helper.util import plot_tensor
 
 """
 mean = {
@@ -19,6 +20,18 @@ std = {
     'cifar100': (0.2675, 0.2565, 0.2761),
 }
 """
+
+
+class Datasubset(torch.utils.data.Dataset):
+    def __init__(self, dataset, len):
+        self.dataset = dataset
+        self.len = len
+
+    def __getitem__(self, i):
+        return self.dataset[i % self.len]
+
+    def __len__(self):
+        return self.len  # max(len(d) for d in self.datasets)
 
 
 class ConcatDataset(torch.utils.data.Dataset):
@@ -178,9 +191,13 @@ def get_cifar100_dataloaders(opt, is_instance=False):
             # generate masks for the data
             train_set_aug = DatasetMasked(train_set_aug, opt=opt)
             opt.aug_size = 50000
+        #
+        # img = train_set.__getitem__(798)
+        # plot_tensor([img[0]])
+        # exit()
 
         train_loader = torch.utils.data.DataLoader(
-            ConcatDataset(train_set, train_set_aug, len=opt.aug_size, opt=opt), batch_size=opt.batch_size, shuffle=True,
+            ConcatDataset(Datasubset(train_set, opt.orig_size), train_set_aug, len=opt.aug_size, opt=opt), batch_size=opt.batch_size, shuffle=True,
             num_workers=opt.num_workers, pin_memory=True)
     else:
         train_loader = DataLoader(train_set,
