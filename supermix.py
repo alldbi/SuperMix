@@ -321,7 +321,7 @@ def augment(opt, data_loader):
 
             # plot the results
             if opt.plot and n_suc>0:
-                n_samples = min(n_suc, 4)
+                n_samples = min(n_suc, 3)
 
                 for p in range(n_samples):
                     n_cols = opt.k * 2 + 1
@@ -408,15 +408,15 @@ if __name__ == '__main__':
                         help='output directory to save results')
     parser.add_argument('--input_dir', type=str, default='/home/aldb/outputs/imgenet/imgnet_train1',
                         help='directory of the training set of ImageNet')
-    parser.add_argument('--bs', type=int, default=16, help='batch size')
+    parser.add_argument('--bs', type=int, default=100, help='batch size')
     parser.add_argument('--aug_size', type=int, default=500000, help='number of images to generate')
     parser.add_argument('--k', type=int, default=2, help='number of samples to mix')
     parser.add_argument('--max_iter', type=int, default=50, help='maximum number of iteration for each batch')
     parser.add_argument('--alpha', type=float, default=3, help='alpha of the Dirichlet distribution')
-    parser.add_argument('--sigma', type=float, default=2, help='standard deviation for the Gaussian blurring')
+    parser.add_argument('--sigma', type=float, default=1, help='standard deviation for the Gaussian blurring')
     parser.add_argument('--w', type=int, default=16, help='width of the mixing masks')
     parser.add_argument('--lambda_s', type=float, default=25, help='multiplier of the sparsity loss')
-    parser.add_argument('--tol', type=int, default=30,
+    parser.add_argument('--tol', type=int, default=70,
                         help='tolerance (percent) for the number of unsuccessful samples in the batch')
     parser.add_argument('--plot', type=bool, default=True, help='plot the results')
     opt = parser.parse_args()
