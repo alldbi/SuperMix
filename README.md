@@ -9,8 +9,8 @@
 ## Run SuperMix
 
 - Auguments are:
-    * `--dataset`: specify the dataset, can be `imagenet` or `cifar100`
-    * `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
+    * `--dataset`: specify the dataset, choices: `imagenet` or `cifar100`, default: `cifar100`.
+    * `--model`: specify the supervisor for augmentation, see 'models/\_\_init\_\_.py' to check the available model types for cifar100. For imagenet, all the models in `torchvision.models` can be used.
     * `--distill`: specify the distillation method
     * `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
     * `-a`: the weight of the KD loss, default: `None`
