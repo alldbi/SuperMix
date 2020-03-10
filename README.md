@@ -65,16 +65,16 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
 
 1. Fetch the pretrained teacher models by:
 
-    ```
-    sh scripts/fetch_pretrained_teachers.sh
-    ```
+   ```
+   sh scripts/fetch_pretrained_teachers.sh
+   ```
    which will download and save the models to `save/models`
    
 2. Produce augmented data using SuperMix by: 
 
-```
-python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./output --bs 128 --aug_size 500000 --w 8 --sigma 1
-```   
+   ```
+   python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./output --bs 128 --aug_size 500000 --w 8 --sigma 1
+   ```   
 
 3. Run the distillation model using cross-entropy (Equation 9 in the paper) by:
 
