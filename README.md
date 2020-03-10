@@ -6,27 +6,44 @@
 
 **Augment a dataset using the supervision of a teacher**
 
-## Running SuperMix on ImageNet
+## Run SuperMix
+
+- Auguments are:
+    * `--dataset`: specify the dataset, can be `imagenet` or `cifar100`
+    * `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
+    * `--distill`: specify the distillation method
+    * `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
+    * `-a`: the weight of the KD loss, default: `None`
+    * `-b`: the weight of other distillation losses, default: `None`
+    * `--trial`: specify the experimental id to differentiate between multiple runs.
 
 
 
+### On the ImageNet data
 
-**(2) benchmarks 12 state-of-the-art knowledge distillation methods in PyTorch, including:**
+```
+python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir --bs 16 --aug_size 50000 --w 16 --sigma 2
+```
 
-(KD) - Distilling the Knowledge in a Neural Network  
-(FitNet) - Fitnets: hints for thin deep nets  
-(AT) - Paying More Attention to Attention: Improving the Performance of Convolutional Neural Networks
-    via Attention Transfer  
-(SP) - Similarity-Preserving Knowledge Distillation  
-(CC) - Correlation Congruence for Knowledge Distillation  
-(VID) - Variational Information Distillation for Knowledge Transfer  
-(RKD) - Relational Knowledge Distillation  
-(PKT) - Probabilistic Knowledge Transfer for deep representation learning  
-(AB) - Knowledge Transfer via Distillation of Activation Boundaries Formed by Hidden Neurons  
-(FT) - Paraphrasing Complex Network: Network Compression via Factor Transfer  
-(FSP) - A Gift from Knowledge Distillation:
-    Fast Optimization, Network Minimization and Transfer Learning  
-(NST) - Like what you like: knowledge distill via neuron selectivity transfer 
+### On the CIFAR-100 data
+
+1. Download the pretrained model by: 
+
+```
+sh scripts/fetch_pretrained_teachers.sh
+```
+   which saves the models to `save/models`
+   
+2. Run supermix.py
+
+```
+python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir --bs 64 --aug_size 50000 --w 8 --sigma 1
+```
+
+### Arguments 
+
+
+
 
 ## Installation
 
