@@ -89,6 +89,9 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
    - `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
    - `-a`: the weight of the KD loss, default: `None`
    - `-b`: the weight of other distillation losses, default: `None`
+   - `--aug_type`: type of the augmentation, choices: `None`, `supermix`, `mixup`, `cutmix`.
+   - `--aug_dir`: the directory of augmented images when `supermix` is selected for `aug_type`.
+   - `--aug_alpha`: alpha for the Dirichlet distribution when `mixup` or `cutmix` is selected for `aug_type`. 
    - `--trial`: specify the experimental id to differentiate between multiple runs.
     
     Therefore, the command for running CRD is something like:
