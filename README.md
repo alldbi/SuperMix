@@ -1,6 +1,6 @@
 # SuperMix: Supervising the Mixing Data Augmentation
 
-![](https://github.com/alldbi/KDA/blob/master/examples/fig.png)
+![](https://github.com/alldbi/KDA/blob/master/examples/fig1.png)
 
 <p></p>
 
