@@ -76,12 +76,19 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
    python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./output --bs 128 --aug_size 500000 --w 8 --sigma 1
    ```   
 
-3. Run the distillation model using cross-entropy (Equation 9 in the paper) by:
+3. Run the distillation
+- using cross-entropy (Equation 9 in the paper) by:
 
    ```
    python3 train_student.py --path_t ./save/models/resnet110_vanilla/ckpt_epoch_240.pth --model_s resnet20 --distill kd --model_s resnet8x4 -r 2.0 -a 0 -b 0 --aug_type supermix --aug_dir ./output --trial 1
    ```
-   
+- using the original distillation objective proposed by Hinton et. al., (Equation 8 in the paper) by:
+
+   ```
+   python3 train_student.py --path_t ./save/models/resnet110_vanilla/ckpt_epoch_240.pth --model_s resnet20 --distill kd --model_s resnet8x4 -r 1.8 -a 0.2 -b 0 --aug_type supermix --aug_dir ./output --trial 1
+   ```
+
+
 - where the flags are explained as:
    - `--path_t`: specify the path of the teacher model
    - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
