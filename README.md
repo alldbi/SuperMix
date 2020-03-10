@@ -4,6 +4,13 @@
 
 <p></p>
 
+**Augment a dataset using the supervision of a teacher**
+
+## Running SuperMix on ImageNet
+
+
+
+
 **(2) benchmarks 12 state-of-the-art knowledge distillation methods in PyTorch, including:**
 
 (KD) - Distilling the Knowledge in a Neural Network  
