@@ -61,7 +61,7 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
 
 ## Evaluating SuperMix for knowledge distillation and object classification
 
-**Code for distillation is forked/copied from [the official code of CRD](https://github.com/HobbitLong/RepDistiller)**
+**Code for the distillation is forked/copied from [the official code of CRD](https://github.com/HobbitLong/RepDistiller)**
 
 1. Fetch the pretrained teacher models by:
 
