@@ -8,6 +8,18 @@
 
 ## Run SuperMix
 
+
+   Auguments are:
+       - `--path_t`: specify the path of the teacher model
+       - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
+       - `--distill`: specify the distillation method
+       - `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
+       - `-a`: the weight of the KD loss, default: `None`
+       - `-b`: the weight of other distillation losses, default: `None`
+       - `--trial`: specify the experimental id to differentiate between multiple runs.
+
+
+
 ### On the ImageNet data
 
 ```
@@ -30,21 +42,7 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
 ```
 
 ### Arguments 
-Auguments are:
-   - a
-   - b
-   - c
 
-
-
-
-    - `--path_t`: specify the path of the teacher model
-    - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
-    - `--distill`: specify the distillation method
-    - `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
-    - `-a`: the weight of the KD loss, default: `None`
-    - `-b`: the weight of other distillation losses, default: `None`
-    - `--trial`: specify the experimental id to differentiate between multiple runs.
 
 
 
