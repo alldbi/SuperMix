@@ -43,6 +43,11 @@ sh scripts/fetch_pretrained_teachers.sh
    
 2. Run supermix.py
 
+3. Sample outputs
+![](https://github.com/alldbi/KDA/blob/master/examples/cifar100.png)
+
+
+
 ```
 python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir --bs 64 --aug_size 50000 --w 8 --sigma 1
 ```
