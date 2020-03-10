@@ -79,7 +79,7 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
 3. Run the distillation model using cross-entropy (Equation 9 in the paper) by:
 
    ```
-   python3 train_student.py --path_t ./save/models/resnet32x4_vanilla/ckpt_epoch_240.pth --distill kd --model_s resnet8x4 -r 2.0 -a 0 -b 0 --trial 1
+   python3 train_student.py --path_t ./save/models/resnet110_vanilla/ckpt_epoch_240.pth --model_s resnet20 --distill kd --model_s resnet8x4 -r 2.0 -a 0 -b 0 --aug_type supermix --aug_dir ./output --trial 1
    ```
    
 where the flags are explained as:
