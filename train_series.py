@@ -77,7 +77,7 @@ def parse_option():
     parser.add_argument('--hint_layer', default=2, type=int, choices=[0, 1, 2, 3, 4])
 
     parser.add_argument('--test_interval', type=int, default=None, help='test interval')
-    parser.add_argument('--seed', default=403, type=int, help='random seed')
+    parser.add_argument('--seed', default=404, type=int, help='random seed')
 
     opt = parser.parse_args()
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     # gamma = [0.1, 0.3, 0.5, 0.7, 0.9]
 
-    student_list = [7, 8, 9, 10, 11, 12]
+    student_list = [0, 1, 2, 3, 4, 5, 6]
 
 
 
@@ -102,9 +102,9 @@ if __name__ == '__main__':
         opt.aug_alpha = 3
         opt.aug_lambda = -1
         opt.gamma = 2
-        opt.alpha = 0
-        opt.aug_type = 'cutmix'
-        opt.trial = "04Feb20"
+        opt.alpha = 1
+        opt.aug_type = 'mixup'
+        opt.trial = "07Feb20"
 
 
         if s==0:

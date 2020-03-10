@@ -20,6 +20,18 @@ from models import model_dict
 import math
 
 
+class Datasubset(torch.utils.data.Dataset):
+    def __init__(self, dataset, len):
+        self.dataset = dataset
+        self.len = len
+
+    def __getitem__(self, i):
+        return self.dataset[i % self.len]
+
+    def __len__(self):
+        return self.len
+
+
 def load_teacher(model_path, n_cls):
     print('==> loading teacher model')
     model_t = get_teacher_name(model_path)
@@ -119,7 +131,7 @@ def kldiv2(x, y):
     return nn.KLDivLoss(reduction='none')(x, y).sum(1)
 
 
-def mask_process(x, alpha_sig=1, upsample_size=32):
+def mask_process(x, alpha_sig=10, upsample_size=32):
     bs = x.size(0)
     K = x.size(1)
     mask_w = x.size(3)
@@ -198,11 +210,15 @@ def mix_batch(net, data, K, alpha=1, mask_w=16, sigma_grad=2, max_iter=200, tole
         # compute the prediction on mixed images
         f_mix = net.forward(mixed_data)
 
+
+        stdloss = torch.abs(m_pr*(m_pr-1))
+        stdloss = stdloss.mean(1).mean(1).mean(1).mean(1)
+
         # compute the kldiv between the predictions and the target soft labels
         kl = kldiv2(f_mix, soft_targets)
 
         # zero out the loss for successfully mixed samples
-        kl = kl * batch_mask
+        kl = (kl+stdloss*2) * batch_mask
 
         loss = kl.sum()
 
@@ -281,12 +297,26 @@ def augment(plot=True):
     total_iter = 0
     batch_counter = 0
     total_time = 0
-    for j in range(300):
+
+    for j in range(300000):
         if counter >= n_aug:
             break
+
+
+
+        # counter = np.zeros([100])
         for batch_index, (images, labels) in enumerate(cifar100_training_loader):
             images, labels = images.to(device), labels.to(device)
             bs = images.size(0)
+        #
+        #
+        #
+        #
+        #     for ii in range(bs):
+        #         counter[labels[ii].item()]+=1
+        # print(counter)
+        # exit()
+
             rng = torch.arange(bs)
             perm = rng
             while ((perm - rng) == 0).sum() > 0:
@@ -296,8 +326,14 @@ def augment(plot=True):
 
             t0 = time.time()
 
-            images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k, mask_w=8,
-                                                                   sigma_grad=1,
+            if bs != opt.bs:
+                break
+            # images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k, mask_w=8,
+            #                                                        sigma_grad=1,
+            #                                                        toler=opt.tol, max_iter=opt.max_iter)
+
+            images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k, mask_w=16,
+                                                                   sigma_grad=2,
                                                                    toler=opt.tol, max_iter=opt.max_iter)
 
             delta_t = time.time() - t0
@@ -351,8 +387,8 @@ def augment(plot=True):
             remaining_time = (opt.aug_size - counter) * total_time / counter
             ert = convert_time(remaining_time)
 
-            print("iter: %d, n_generated: %d, iters: %02d, avg iters: %.2f, time: %.1fs, ert: %d:%d:%02d" % (
-                batch_index, counter, iter, (total_iter / batch_counter), delta_t, ert[0], ert[1],
+            print("iter: %d, n_generated: %d, iters: %02d, avg iters: %.4f, time: %.1fs, avg time: %.4f, ert: %d:%d:%02d" % (
+                batch_index, counter, iter, (total_iter / counter), delta_t, total_time/counter, ert[0], ert[1],
                 ert[2]))
             if counter > n_aug:
                 return 0
@@ -385,13 +421,16 @@ def count_parameters(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str, default='cifar-100',
+                        help='dataset could be cifar-100 or imagenet')
     parser.add_argument('--path_t', type=str, default='./save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth',
-                        help='teacher model snapshot')
+                        help='teacher model snapshot for cifar-100')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
-    parser.add_argument('--save_dir', type=str, default='/home/aldb/outputs/new2',
+    parser.add_argument('--save_dir', type=str, default='/home/aldb/outputs/new2/secondaug',
                         help='output directory to save results')
-    parser.add_argument('--bs', type=int, default=100, help='batch size for dataloader')
-    parser.add_argument('--aug_size', type=int, default=500000, help='number of samples to generate')
+    parser.add_argument('--bs', type=int, default=100, help='batch size for dataloader, default100')
+    parser.add_argument('--aug_size', type=int, default=1000000, help='number of samples to generate')
+    parser.add_argument('--input_size', type=int, default=1000, help='number of samples to generate')
     parser.add_argument('--k', type=int, default=2, help='number of samples to mix')
     parser.add_argument('--max_iter', type=int, default=50, help='maximum number of iteration for each batch')
     parser.add_argument('--alpha', type=float, default=1, help='alpha of the beta distribution')
@@ -410,42 +449,65 @@ if __name__ == '__main__':
     # set the device
     device = torch.device(opt.device)
 
-    # load the teacher model
-    model = load_teacher(opt.path_t, 100)
-    opt.net_name = get_teacher_name(opt.path_t)
-
-    model.eval()
-    model.to(device)
-
     # load the data
     transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32, padding=1),
         transforms.ToTensor(),
         transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD)
     ])
+
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD)
+    ])
+
     cifar100_training = torchvision.datasets.CIFAR100(root='./data', train=True, download=True,
                                                       transform=transform)
-    cifar100_training_loader = DataLoader(
-        cifar100_training, shuffle=True, num_workers=2, batch_size=opt.bs)
 
-    cifar100_test = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform)
+    cifar100_training_loader = DataLoader(
+        Datasubset(cifar100_training, opt.input_size), shuffle=True, num_workers=2, batch_size=opt.bs)
+
+    cifar100_test = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
     cifar100_test_loader = DataLoader(
-        cifar100_test, shuffle=False, num_workers=2, batch_size=opt.bs)
+        cifar100_test, shuffle=False, num_workers=2, batch_size=100)
 
     criterion = nn.CrossEntropyLoss()
 
     best_acc = 0.0
     best_loss = 0.0
 
-    # evaluate the teacher
-    acc, _ = eval(device, model)
-    print("Teacher accuracy: %.2f" % (acc * 100))
-
     alpha = [0.5, 1, 3, 5, 15, 10000]
     alpha.reverse()
-    for a in alpha:
+    alpha = 3
 
-        opt.alpha = a
-        save_dir = opt.save_dir + '/' + opt.net_name + '_k:' + str(opt.k) + '_alpha:' + str(opt.alpha) + '/data/'
+    klist = [2]
+
+    # teachers = ['ResNet50']
+    insizes = [50000]
+
+
+
+    t = 'wrn_40_2'
+    for ins in insizes:
+
+        opt.alpha = 3
+
+        opt.path_t = './save/models/' + t + '_vanilla/ckpt_epoch_240.pth'
+        # load the teacher model
+        model = load_teacher(opt.path_t, 100)
+        opt.net_name = get_teacher_name(opt.path_t)
+        opt.k = 2
+        opt.input_size = 50000
+        model.eval()
+        model.to(device)
+
+        # evaluate the teacher
+        acc, _ = eval(device, model)
+        print("Teacher accuracy: %.2f" % (acc * 100))
+
+        save_dir = opt.save_dir + '/' + opt.net_name + '_k:' + str(opt.k) + '_alpha:' + str(
+            opt.alpha) + '_insize:' + str(opt.input_size) + '1meg/data/'
 
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)

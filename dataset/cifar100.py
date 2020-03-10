@@ -60,9 +60,11 @@ class DatasetMasked(torch.utils.data.Dataset):
         s_w = int(32 * np.sqrt(1 - lambda_aug))
         if s_w == 32:
             s_w = 31
-        rand = torch.randint(0, 32 - s_w, size=[2])
 
-        mask[rand[0]:rand[0] + s_w, rand[1]:rand[1] + s_w] = 1
+
+
+        rand = torch.randint(0, 32 - s_w, size=[2])
+        mask[int(rand[0]):int(rand[0]) + s_w, int(rand[1]):int(rand[1]) + s_w] = 1
         mask = mask.view(1, 32, 32)
         # res.append(mask)
         return res + tuple(mask)  # append the mask to  output
