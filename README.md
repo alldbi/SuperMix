@@ -8,8 +8,7 @@
 
 ## Run SuperMix
 
-
-   Auguments are:
+- Auguments are:
    
        * `--path_t`: specify the path of the teacher model
        * `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
