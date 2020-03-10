@@ -178,6 +178,7 @@ def train_distill(epoch, train_loader, val_loader, module_list, criterion_list, 
                 input_aug = mask * input_aug + (1 - mask) * input_aug_b
                 # for i in range(10):
                 #     plot_tensor([input_aug[i], mask[i]])
+            input_aug = input_aug.to(device)
 
         # ===================forward=====================
         preact = False

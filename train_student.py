@@ -75,7 +75,7 @@ def parse_option():
     # augmentation parameters
     parser.add_argument('--aug_type', type=str, default='cutmix', choices=[None, 'mixup', 'cutmix', 'supermix'],
                         help='type of augmentation')
-    parser.add_argument('--aug_dir', type=str, default='/home/aldb2/aug_dataset/',
+    parser.add_argument('--aug_dir', type=str, default='/home/mehdi/output/alpha_3/all/',
                         help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=-1,
                         help='size of the augmented dataset, -1 means the maximum possible size')
@@ -138,8 +138,6 @@ def random_crop_grid(x, grid):
     return grid
 
 
-
-
 def distill(opt):
     # refine the opt arguments
 
@@ -154,24 +152,28 @@ def distill(opt):
 
     if opt.aug_type == 'supermix':
         # opt.aug_dir = opt.aug_dir + opt.model_t + '_alpha:' + str(opt.aug_alpha)+'_better'
-        opt.aug_dir = '/home/aldb2/aug_dataset/data_vgg13'
+        # opt.aug_dir = '/media/aldb2/M2/datasets/supermix/alpha3/all/' + opt.model_t + '_k:'+str(opt.aug_k)+'_alpha:3'
+        opt.aug_dir = '/home/aldb2/aug_dataset/vgg_sigma2_size16/vgg13_k:3_alpha:3'
+        opt.aug_dir = '/home/aldb2/aug_dataset/out_imgnet'
+        opt.aug_dir = '/home/aldb2/aug_dataset/fewshot/vgg13_k:2_alpha:3_insize:' + str(opt.orig_size)
         print("Aug dir for supermix:", opt.aug_dir)
     else:
         opt.aug_dir = ''
 
     opt.print_freq = int(50000 / opt.batch_size / opt.print_freq)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_T:{}'.format(
+    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_augK:{}_T:{}'.format(
         opt.model_s, opt.model_t,
         opt.dataset,
         opt.distill,
+        opt.orig_size,
         opt.gamma, opt.alpha, opt.beta,
         opt.trial,
         opt.device, opt.seed,
         opt.aug_type,
         opt.aug_lambda,
         opt.aug_alpha,
-        opt.aug_size, opt.kd_T)
+        opt.aug_size,opt.aug_k, opt.kd_T)
 
     opt.save_folder = os.path.join(opt.model_path, opt.model_name)
     if not os.path.isdir(opt.save_folder):
@@ -363,8 +365,9 @@ def distill(opt):
     for epoch in range(1, opt.epochs + 1):
         adjust_learning_rate(epoch, opt, optimizer)
         time1 = time.time()
-        best_acc, total_t = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt, best_acc, logger,
-                         device, warmup_scheduler, total_t)
+        best_acc, total_t = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt,
+                                  best_acc, logger,
+                                  device, warmup_scheduler, total_t)
         time2 = time.time()
         print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
         print('Best accuracy: %.2f \n' % (best_acc))

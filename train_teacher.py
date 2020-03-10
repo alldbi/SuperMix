@@ -30,18 +30,20 @@ def parse_option():
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
     parser.add_argument('--num_workers', type=int, default=8, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=600, help='number of training epochs')
-    parser.add_argument('--device', type=str, default='cuda:1', help='batch_size')
+    parser.add_argument('--device', type=str, default='cuda:0', help='batch_size')
 
     # optimization
-    parser.add_argument('--learning_rate', type=float, default=0.1, help='learning rate')
+    parser.add_argument('--learning_rate', type=float, default=0.02, help='learning rate')
     parser.add_argument('--lr_decay_epochs', type=str, default='200, 300, 400, 500', help='where to decay lr, can be a list')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='decay rate for learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-4, help='weight decay')
     parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
     parser.add_argument('--aug', type=str, default=None,
                         help='address of the augmented dataset')
+    parser.add_argument('--aug_type', type=str, default=None,
+                        help='address of the augmented dataset')
     # dataset
-    parser.add_argument('--model', type=str, default='vgg8',
+    parser.add_argument('--model', type=str, default='MobileNetV2',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19',
@@ -53,8 +55,8 @@ def parse_option():
     opt = parser.parse_args()
     
     # set different learning rate from these 4 models
-    if opt.model in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
-        opt.learning_rate = 0.01
+    # if opt.model in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
+    #     opt.learning_rate = 0.01
 
     # set the path according to the environment
 
@@ -95,6 +97,8 @@ def main():
                           lr=opt.learning_rate,
                           momentum=opt.momentum,
                           weight_decay=opt.weight_decay)
+
+    print("learning rate:", opt.learning_rate)
 
     criterion = nn.CrossEntropyLoss()
 
