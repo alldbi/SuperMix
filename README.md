@@ -30,8 +30,8 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
 ```
 
 ### Arguments 
-this
-    where the flags are explained as:
+Auguments are:
+
     - `--path_t`: specify the path of the teacher model
     - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
     - `--distill`: specify the distillation method
