@@ -400,11 +400,11 @@ def count_parameters(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='imagenet', help='dataset could be cifar100 or imagenet')
-    parser.add_argument('--modelT', type=str, default='resnet101',
+    parser.add_argument('--dataset', type=str, default='cifar100', help='dataset to augment', choices=['imagenet', 'cifar100'])
+    parser.add_argument('--model', type=str, default='resnet32',
                         help='name of the supervisor model to load')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
-    parser.add_argument('--save_dir', type=str, default='/home/aldb/outputs/test',
+    parser.add_argument('--save_dir', type=str, required=True,
                         help='output directory to save results')
     parser.add_argument('--input_dir', type=str, default='/home/aldb/outputs/imgenet/imgnet_train1',
                         help='directory of the training set of ImageNet')
@@ -414,7 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_iter', type=int, default=50, help='maximum number of iteration for each batch')
     parser.add_argument('--alpha', type=float, default=3, help='alpha of the Dirichlet distribution')
     parser.add_argument('--sigma', type=float, default=2, help='standard deviation for the Gaussian blurring')
-    parser.add_argument('--w', type=float, default=16, help='width of the mixing masks')
+    parser.add_argument('--w', type=int, default=16, help='width of the mixing masks')
     parser.add_argument('--lambda_s', type=float, default=25, help='multiplier of the sparsity loss')
     parser.add_argument('--tol', type=int, default=30,
                         help='tolerance (percent) for the number of unsuccessful samples in the batch')
@@ -459,7 +459,7 @@ if __name__ == '__main__':
             cifar100_test, shuffle=False, num_workers=2, batch_size=100)
 
         # load the teacher model
-        path_t = './save/models/' + opt.modelT + '_vanilla/ckpt_epoch_240.pth'
+        path_t = './save/models/' + opt.model + '_vanilla/ckpt_epoch_240.pth'
         model = load_teacher(path_t, 100)
         model.eval()
         model.to(device)
@@ -489,7 +489,7 @@ if __name__ == '__main__':
         data_loader = torch.utils.data.DataLoader(
             train_dataset, batch_size=opt.bs, num_workers=4, pin_memory=True, shuffle=True)
 
-        loader = getattr(models, opt.modelT)
+        loader = getattr(models, opt.model)
 
         model = loader(pretrained=True)
         model.eval()
