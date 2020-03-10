@@ -406,6 +406,7 @@ if __name__ == '__main__':
     mean = np.array(CIFAR100_MEAN)
     std = std.reshape(1, 1, 3)
     mean = mean.reshape(1, 1, 3)
+    print("new")
 
     # set the device
     device = torch.device(opt.device)
