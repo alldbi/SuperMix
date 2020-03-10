@@ -144,3 +144,18 @@ Performance is measured by classification accuracy (%)
 | MixUp+KD| 76.58 | 76.10 | 72.89 | 72.82 | 74.94 | 77.07 | 75.58 |
 | CutMix+KD| 76.81 | 76.45 | 72.67 | 72.83 | 74.87 | 76.90 | 75.50 |
 | SuperMix+KD| **77.45**   |**76.53**| **73.19**| **72.96** | **75.21**|   **77.59**    |   **76.03**    |
+
+
+## Citation
+
+The citation information for SuperMix will be available soon. Meanwhile, if you founed the code helpful for your research, please also cite the paper for CRD due to their notable contribution by benchmarking the state-of-the-art methods of distillation. 
+
+```
+@inproceedings{tian2019crd,
+  title={Contrastive Representation Distillation},
+  author={Yonglong Tian and Dilip Krishnan and Phillip Isola},
+  booktitle={International Conference on Learning Representations},
+  year={2020}
+}
+```
+
