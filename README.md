@@ -26,13 +26,19 @@
     * `--plot`: plot the mixed images after generation, default: `True`
 
 
-### Example for the ImageNet data
-
+### Run on the ImageNet data
+1. Run supermix.py
 ```
 python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir --bs 16 --aug_size 50000 --w 16 --sigma 2
 ```
+2. Sample outputs
 
-### Example for the CIFAR-100 data
+<p align="center"> 
+<img src="https://github.com/alldbi/KDA/blob/master/examples/imagenet.png">
+</p>
+
+
+### Run on the CIFAR-100 data
 
 1. Download the pretrained model by: 
 
@@ -47,35 +53,46 @@ sh scripts/fetch_pretrained_teachers.sh
 python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir --bs 64 --aug_size 50000 --w 8 --sigma 1
 ```
 
+3. Sample outputs
 
+<p align="center"> 
+<img src="https://github.com/alldbi/KDA/blob/master/examples/cifar100.png">
+</p>
 
+## Evaluating SuperMix for knowledge distillation and object classification
 
-## Installation
-
-This repo was tested with Ubuntu 16.04.5 LTS, Python 3.5, PyTorch 0.4.0, and CUDA 9.0. But it should be runnable with recent PyTorch versions >=0.4.0
-
-## Running
+**Code for the distillation is forked/copied from [the official code of CRD](https://github.com/HobbitLong/RepDistiller)**
 
 1. Fetch the pretrained teacher models by:
 
-    ```
-    sh scripts/fetch_pretrained_teachers.sh
-    ```
+   ```
+   sh scripts/fetch_pretrained_teachers.sh
+   ```
    which will download and save the models to `save/models`
    
-2. Run distillation by following commands in `scripts/run_cifar_distill.sh`. An example of running Geoffrey's original Knowledge Distillation (KD) is given by:
+2. Produce augmented data using SuperMix by: 
 
-    ```
-    python train_student.py --path_t ./save/models/resnet32x4_vanilla/ckpt_epoch_240.pth --distill kd --model_s resnet8x4 -r 0.1 -a 0.9 -b 0 --trial 1
-    ```
-    where the flags are explained as:
-    - `--path_t`: specify the path of the teacher model
-    - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
-    - `--distill`: specify the distillation method
-    - `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
-    - `-a`: the weight of the KD loss, default: `None`
-    - `-b`: the weight of other distillation losses, default: `None`
-    - `--trial`: specify the experimental id to differentiate between multiple runs.
+   ```
+   python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./output --bs 128 --aug_size 500000 --w 8 --sigma 1
+   ```   
+
+3. Run the distillation model using cross-entropy (Equation 9 in the paper) by:
+
+   ```
+   python3 train_student.py --path_t ./save/models/resnet110_vanilla/ckpt_epoch_240.pth --model_s resnet20 --distill kd --model_s resnet8x4 -r 2.0 -a 0 -b 0 --aug_type supermix --aug_dir ./output --trial 1
+   ```
+   
+- where the flags are explained as:
+   - `--path_t`: specify the path of the teacher model
+   - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
+   - `--distill`: specify the distillation method
+   - `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
+   - `-a`: the weight of the KD loss, default: `None`
+   - `-b`: the weight of other distillation losses, default: `None`
+   - `--aug_type`: type of the augmentation, choices: `None`, `supermix`, `mixup`, `cutmix`.
+   - `--aug_dir`: the directory of augmented images when `supermix` is selected for `aug_type`.
+   - `--aug_alpha`: alpha for the Dirichlet distribution when `mixup` or `cutmix` is selected for `aug_type`. 
+   - `--trial`: specify the experimental id to differentiate between multiple runs.
     
     Therefore, the command for running CRD is something like:
     ```
@@ -93,26 +110,7 @@ Note: the default setting is for a single-GPU training. If you would like to pla
 
 ## Benchmark Results on CIFAR-100:
 
-Performance is measured by classification accuracy (%)
-
-1. Performance of distillation vs. size of the augmented dataset when teacher and student are from the same architecture.
-
-| Teacher/Student | Aug  | 0   | 50K | 100k |200k |300k | 400k | 500k |
-| -----------     | ---- | ----| --- | --- | ---- | ---- | ---- | ---- |
-| wrn-40-2/wrn-16-2    | MAS  | 73.25  |74.61±0.15  | 75.81±0.14 | 75.91±0.21 | 76.21±0.14 | 76.30±0.15 | 76.30±0.14 |                     
-| resnet110/resnet20   | MAS  | 69.06  |  71.21±0.13          | 71.52±0.43 | 71.79±0.22 | 71.81±0.29 | 72.31±0.20 | 72.39±0.06 |
-| vgg13/vgg8    | MAS  |  70.36    |  71.74±0.20  | 73.18±0.10 |   74.47±0.43   |   74.57±0.06   |   74.68±0.24   | 74.59±0.12  |
-
-
-2. Performance of distillation vs. size of the augmented dataset when teacher and student are from different architecture.
-
-| Teacher/Student      | Aug  |  0       | 50K | 100k |200k |300k | 400k | 500k |
-| -----------          | ---- | -------  | --- | --- | ---- | ---- | ---- | ---- |
-| vgg13/MobileNetV2    | MAS  |  64.60   | 68.13±0.18  | 69.42±0.39 | 69.26±0.80 | 70.68±0.48 | 69.76±0.65 | 70.49±0.56  |
-
-3. Teacher and student are of the **same** architectural type.
-    - MAA: KDA with unsupervised augmentation using averaging
-    - MAS: KDA with supervised augmentation using the same Teacher network.  
+Performance is measured by classification accuracy (%) 
 
 | Teacher <br> Student | wrn-40-2 <br> wrn-16-2 | wrn-40-2 <br> wrn-40-1 | resnet56 <br> resnet20 | resnet110 <br> resnet20 | resnet110 <br> resnet32 | resnet32x4 <br> resnet8x4 |  vgg13 <br> vgg8 |
 |:---------------:|:-----------------:|:-----------------:|:-----------------:|:------------------:|:------------------:|:--------------------:|:-----------:|
@@ -130,29 +128,16 @@ Performance is measured by classification accuracy (%)
 | FSP  | 72.91 | 0.00 | 69.95 | 70.11 | 71.89 | 72.62 | 70.23 |
 | NST  | 73.68 | 72.24 | 69.60 | 69.53 | 71.96 | 73.30 | 71.53 |
 | CRD  | 75.48 | 74.14 | 71.16 | 71.46 | 73.48 | 75.51 | 73.94 |
-| ImgNet| |  |   |    |  |  |  |  | 
-| MixUp|  75.70±0.11     |   75.12±0.31     |   _71.78±0.26_    | _72.26±0.42_ |   73.70±0.32    |   76.17±0.12     |    74.07±0.32   |
-| SuperMix|    **76.30±0.14**   |    **75.49±0.38**   |   _**72.13±0.46**_    | _**72.39±0.06**_ |   **74.25±0.07**    |   **76.92±0.08**    |   **74.59±0.12**    |
+| CRD+KD |  75.64| 74.38| 71.63 | 71.56 | 73.75 | 75.46 | 74.29 |
+| ImgNet32| 74.91 | 74.80 | 71.38 | 71.48 | 73.17 | 75.57 | 73.95 |
+| MixUp|  76.20| 75.53 | 72.00 | 72.27 | 74.60 | 76.73 | 74.56 |
+| CutMix| 76.40 | 75.85 | 72.33 | 72.68 | 74.24 |76.81 | 74.87 |
+| SuperMix|**76.93**|**76.11**|**72.64**|**72.75** |   **74.80**    |   **77.16**    |   **75.38**    |
+| ImgNet32+KD| 76.52 | 75.70 | 72.22 | 72.23 | 74.24 | 76.46 | 75.02 |
+| MixUp+KD| 76.58 | 76.10 | 72.89 | 72.82 | 74.94 | 77.07 | 75.58 |
+| CutMix+KD| 76.81 | 76.45 | 72.67 | 72.83 | 74.87 | 76.90 | 75.50 |
+| SuperMix+KD| **77.45**   |**76.53**| **73.19**| **72.96** | **75.21**|   **77.59**    |   **76.03**    |
 
-4. Teacher and student are of **different** architectural type.
-
-| Teacher <br> Student | vgg13 <br> MobileNetV2 | ResNet50 <br> MobileNetV2 | ResNet50 <br> vgg8 | resnet32x4 <br> ShuffleNetV1 | resnet32x4 <br> ShuffleNetV2 | wrn-40-2 <br> ShuffleNetV1 |
-|:---------------:|:-----------------:|:--------------------:|:-------------:|:-----------------------:|:-----------------------:|:---------------------:|
-| Teacher <br> Student |    74.64 <br> 64.60    |      79.34 <br> 64.60     |  79.34 <br> 70.36  |       79.42 <br> 70.50       |       79.42 <br> 71.82       |      75.61 <br> 70.50      |
-| KD | 67.37 | 67.35 | 73.81 | 74.07 | 74.45 | 74.83 |
-| FitNet | 64.14 | 63.16 | 70.69 | 73.59 | 73.54 | 73.73 |
-| AT | 59.40 | 58.58 | 71.84 | 71.73 | 72.73 | 73.32 |
-| SP | 66.30 | 68.08 | 73.34 | 73.48 | 74.56 | 74.52 |
-| CC | 64.86 | 65.43 | 70.25 | 71.14 | 71.29 | 71.38 |
-| VID | 65.56 | 67.57 | 70.30 | 73.38 | 73.40 | 73.61 |
-| RKD | 64.52 | 64.43 | 71.50 | 72.28 | 73.21 | 72.21 |
-| PKT | 67.13 | 66.52 | 73.01 | 74.10 | 74.69 | 73.89 |
-| AB | 66.06 | 67.20 | 70.65 | 73.55 | 74.31 | 73.34 |
-| FT | 61.78 | 60.99 | 70.29 | 71.75 | 72.50 | 72.03 |
-| NST | 58.16 | 64.96 | 71.28 | 74.12 | 74.68 | 74.89 |
-| CRD | 69.73 | 69.11 | 74.30 | 75.11 | 75.65 | 76.05 |
-| MixUp |  **70.53±0.21**  |   70.83±0.61    |    74.94±0.42  |   77.18±0.19   |   77.99±0.15   |   75.90±0.09     |
-| SuperMix |  70.49±0.56   |    **71.69±0.36**   |   **75.45±0.08**   |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
 ## Citation
 
 If you find this repo useful for your research, please consider citing the paper
