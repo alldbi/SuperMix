@@ -78,10 +78,11 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./output --b
 
 3. Run the distillation model using simple classification by:
 
-```
-    python3 train_student.py --path_t ./save/models/resnet32x4_vanilla/ckpt_epoch_240.pth --distill kd --model_s resnet8x4 -r 2.0 -a 0 -b 0 --trial 1
-    ```
-    where the flags are explained as:
+   ```
+   python3 train_student.py --path_t ./save/models/resnet32x4_vanilla/ckpt_epoch_240.pth --distill kd --model_s resnet8x4 -r 2.0 -a 0 -b 0 --trial 1
+   ```
+   
+where the flags are explained as:
     - `--path_t`: specify the path of the teacher model
     - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
     - `--distill`: specify the distillation method
