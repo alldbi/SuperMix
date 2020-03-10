@@ -33,6 +33,10 @@ python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir -
 ```
 2. Sample outputs
 
+<p align="center"> 
+<img src="https://github.com/alldbi/KDA/blob/master/examples/imagenet.png">
+</p>
+
 ![](https://github.com/alldbi/KDA/blob/master/examples/imagenet.png)
 
 
