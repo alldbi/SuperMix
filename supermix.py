@@ -18,6 +18,8 @@ import scipy.misc as misc
 from helper.util import get_teacher_name
 from models import model_dict
 import math
+import torchvision.datasets as datasets
+import torchvision.models as models
 
 
 class Datasubset(torch.utils.data.Dataset):
@@ -95,11 +97,7 @@ class Smoothing(nn.Module):
 smoother = Smoothing().cuda()
 
 
-def sigmoid(x, a=1):
-    return torch.sigmoid(a * x)
-
-
-def normalize(x):
+def normalize01(x):
     return (x - x.min()) / (x.max() - x.min())
 
 
@@ -109,7 +107,7 @@ def tensor2img(t, ismask=False):
         x = x.transpose(1, 2, 0)
     if ismask:
         return x
-    return normalize(x)
+    return normalize01(x)
 
 
 def plott(t_list):
@@ -131,30 +129,33 @@ def kldiv2(x, y):
     return nn.KLDivLoss(reduction='none')(x, y).sum(1)
 
 
-def mask_process(x, alpha_sig=10, upsample_size=32):
+def mask_process(x, upsample_size):
     bs = x.size(0)
     K = x.size(1)
     mask_w = x.size(3)
     m1 = x.view(bs * K, 1, mask_w, mask_w)
     m1 = F.interpolate(m1, upsample_size, mode='bilinear')
-    m1 = m1.view(bs, K, 1, 32, 32)
-    if alpha_sig > 0:
-        m1 = sigmoid(m1, alpha_sig)
-    else:
-        m1 = torch.abs(m1)
+    m1 = m1.view(bs, K, 1, upsample_size, upsample_size)
+    m1 = torch.sigmoid(m1)
     sum_masks = m1.sum(1, keepdim=True)
     m1 = m1 / sum_masks
     return m1
 
 
 def mix_batch(net, data, K, alpha=1, mask_w=16, sigma_grad=2, max_iter=200, toler=0):
+
+
+
+    # size of the current batch
     bs = data.size(0)
-    data = data.cuda()
-    # predict the label of the data
+    # spatial size of the input images
+    inw = data.size(2)
+
+    # predict the label of the input images
     f_data = net(data)
     pred_lbl = f_data.argmax(1)
 
-    # generate the shuffle indexes for making sets X
+    # generate the shuffle indexes to construct the sets X
     idx = list(range(bs))
     idx_arr = [idx]
     for i in range(K - 1):
@@ -164,29 +165,28 @@ def mix_batch(net, data, K, alpha=1, mask_w=16, sigma_grad=2, max_iter=200, tole
         idx_arr.append(idx)
     idx_arr = np.array(idx_arr)
 
-    # construct K set and store them in a data_X
-    data_X = torch.zeros([bs, K, 3, 32, 32])
+    # construct K set and store them in data_X
+    data_X = torch.zeros([bs, K, 3, inw, inw])
     lbl_X = torch.zeros([bs, K])
     for i in range(K):
         data_X[:, i, ...] = data[idx_arr[i], ...]
         lbl_X[:, i] = pred_lbl[idx_arr[i], ...]
     data_X = data_X.cuda()
 
-    # print(lbl_X)
-    # construct the target soft labels
-    soft_targets = torch.zeros([bs, 100])
+    # construct the target soft labels, Equation 2 in the paper
+    soft_targets = torch.zeros([bs, opt.n_classes])
     for i in range(bs):
         lbl_set = lbl_X[i:i + 1, :]
         lbl_set = lbl_set.view(K, 1)
         lambda_aug = np.random.dirichlet(np.ones(K) * alpha, 1).reshape(K, 1)
         lambda_aug = torch.from_numpy(lambda_aug).type(torch.FloatTensor).cuda()
-        lbl_set_onehot = onehot(lbl_set, 100) * lambda_aug
+        lbl_set_onehot = onehot(lbl_set, opt.n_classes) * lambda_aug
         lbl_soft = lbl_set_onehot.sum(0)
         soft_targets[i, :] = lbl_soft
     soft_targets = soft_targets.cuda()
 
     # construct the mask variables
-    mask_init = 0.1
+    mask_init = 0.
     mask = torch.ones([bs, K, 1, mask_w, mask_w]).cuda() * mask_init
 
     loop_i = 0
@@ -201,7 +201,7 @@ def mix_batch(net, data, K, alpha=1, mask_w=16, sigma_grad=2, max_iter=200, tole
         m = Variable(mask, requires_grad=True)
 
         # process the mask variable which will: 1) upsample the mask, 2) normalize it
-        m_pr = mask_process(m)
+        m_pr = mask_process(m, upsample_size=inw)
 
         # construct mixed images
         mixed_data = m_pr * data_X
@@ -210,15 +210,14 @@ def mix_batch(net, data, K, alpha=1, mask_w=16, sigma_grad=2, max_iter=200, tole
         # compute the prediction on mixed images
         f_mix = net.forward(mixed_data)
 
-
-        stdloss = torch.abs(m_pr*(m_pr-1))
+        stdloss = torch.abs(m_pr * (m_pr - 1))
         stdloss = stdloss.mean(1).mean(1).mean(1).mean(1)
 
         # compute the kldiv between the predictions and the target soft labels
         kl = kldiv2(f_mix, soft_targets)
 
         # zero out the loss for successfully mixed samples
-        kl = (kl+stdloss*2) * batch_mask
+        kl = (kl + stdloss * opt.lambda_s) * batch_mask
 
         loss = kl.sum()
 
@@ -243,7 +242,7 @@ def mix_batch(net, data, K, alpha=1, mask_w=16, sigma_grad=2, max_iter=200, tole
         r_i = -1 * pert.view(bs, 1, 1, 1, 1).repeat(1, K, 1, 1, 1) * w
 
         mask = mask + r_i.detach() * batch_mask.view(bs, 1, 1, 1, 1)
-        mask_pr = mask_process(mask)
+        mask_pr = mask_process(mask, upsample_size=inw)
         check_mix = mask_pr * data_X
         check_mix = check_mix.sum(1)
 
@@ -289,38 +288,17 @@ def convert_time(seconds):
     return [hour, minutes, seconds]
 
 
-def augment(plot=True):
+def augment(opt, data_loader):
     model.eval()
-
-    n_aug = opt.aug_size
     counter = 0
     total_iter = 0
     batch_counter = 0
     total_time = 0
 
-    for j in range(300000):
-        if counter >= n_aug:
-            break
-
-
-
-        # counter = np.zeros([100])
-        for batch_index, (images, labels) in enumerate(cifar100_training_loader):
+    while counter < opt.aug_size:
+        for batch_index, (images, labels) in enumerate(data_loader):
             images, labels = images.to(device), labels.to(device)
             bs = images.size(0)
-        #
-        #
-        #
-        #
-        #     for ii in range(bs):
-        #         counter[labels[ii].item()]+=1
-        # print(counter)
-        # exit()
-
-            rng = torch.arange(bs)
-            perm = rng
-            while ((perm - rng) == 0).sum() > 0:
-                perm = torch.randperm(bs)
 
             model.zero_grad()
 
@@ -328,22 +306,22 @@ def augment(plot=True):
 
             if bs != opt.bs:
                 break
-            # images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k, mask_w=8,
-            #                                                        sigma_grad=1,
-            #                                                        toler=opt.tol, max_iter=opt.max_iter)
 
-            images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k, mask_w=16,
-                                                                   sigma_grad=2,
+            # use the data in the batch to generated new data
+            images_mixed, mask, pred_mix, data_X, iter = mix_batch(model, images, alpha=opt.alpha, K=opt.k,
+                                                                   mask_w=opt.w,
+                                                                   sigma_grad=opt.sigma,
                                                                    toler=opt.tol, max_iter=opt.max_iter)
 
             delta_t = time.time() - t0
             total_time += delta_t
 
+            # number of generated images
             n_suc = images_mixed.size(0)
 
             # plot the results
-            if plot:
-                n_samples = 4
+            if opt.plot and n_suc>0:
+                n_samples = min(n_suc, 4)
 
                 for p in range(n_samples):
                     n_cols = opt.k * 2 + 1
@@ -377,20 +355,21 @@ def augment(plot=True):
 
                 img = img.astype(np.uint8)
 
-                misc.imsave(save_dir + '/' + str(counter + i) + '.png', img)
+                misc.imsave(opt.save_dir + '/' + str(counter + i) + '.png', img)
 
             counter += n_suc
 
             total_iter += iter
             batch_counter += 1
 
-            remaining_time = (opt.aug_size - counter) * total_time / counter
+            remaining_time = (opt.aug_size - counter) * total_time / (counter+1)
             ert = convert_time(remaining_time)
 
-            print("iter: %d, n_generated: %d, iters: %02d, avg iters: %.4f, time: %.1fs, avg time: %.4f, ert: %d:%d:%02d" % (
-                batch_index, counter, iter, (total_iter / counter), delta_t, total_time/counter, ert[0], ert[1],
-                ert[2]))
-            if counter > n_aug:
+            print(
+                "iter: %d, n_generated: %d, iters: %02d, ert: %d:%d:%02d" % (
+                    batch_index, counter, iter, ert[0], ert[1],
+                    ert[2]))
+            if counter > opt.aug_size:
                 return 0
 
 
@@ -398,7 +377,7 @@ def eval(device, net):
     net.eval()
     test_loss = 0.0  # cost function error
     correct = 0.0
-
+    criterion = nn.CrossEntropyLoss()
     for (images, labels) in cifar100_test_loader:
         images, labels = images.to(device), labels.to(device)
 
@@ -421,100 +400,103 @@ def count_parameters(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='cifar-100',
-                        help='dataset could be cifar-100 or imagenet')
-    parser.add_argument('--path_t', type=str, default='./save/models/wrn_40_2_vanilla/ckpt_epoch_240.pth',
-                        help='teacher model snapshot for cifar-100')
+    parser.add_argument('--dataset', type=str, default='imagenet', help='dataset could be cifar100 or imagenet')
+    parser.add_argument('--modelT', type=str, default='resnet101',
+                        help='name of the supervisor model to load')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
-    parser.add_argument('--save_dir', type=str, default='/home/aldb/outputs/new2/secondaug',
+    parser.add_argument('--save_dir', type=str, default='/home/aldb/outputs/test',
                         help='output directory to save results')
-    parser.add_argument('--bs', type=int, default=100, help='batch size for dataloader, default100')
-    parser.add_argument('--aug_size', type=int, default=1000000, help='number of samples to generate')
-    parser.add_argument('--input_size', type=int, default=1000, help='number of samples to generate')
+    parser.add_argument('--input_dir', type=str, default='/home/aldb/outputs/imgenet/imgnet_train1',
+                        help='directory of the training set of ImageNet')
+    parser.add_argument('--bs', type=int, default=16, help='batch size')
+    parser.add_argument('--aug_size', type=int, default=500000, help='number of images to generate')
     parser.add_argument('--k', type=int, default=2, help='number of samples to mix')
     parser.add_argument('--max_iter', type=int, default=50, help='maximum number of iteration for each batch')
-    parser.add_argument('--alpha', type=float, default=1, help='alpha of the beta distribution')
-    parser.add_argument('--tol', type=int, default=10,
-                        help='tolerance for the number of unsuccessful samples in the batch')
+    parser.add_argument('--alpha', type=float, default=3, help='alpha of the Dirichlet distribution')
+    parser.add_argument('--sigma', type=float, default=2, help='standard deviation for the Gaussian blurring')
+    parser.add_argument('--w', type=float, default=16, help='width of the mixing masks')
+    parser.add_argument('--lambda_s', type=float, default=25, help='multiplier of the sparsity loss')
+    parser.add_argument('--tol', type=int, default=30,
+                        help='tolerance (percent) for the number of unsuccessful samples in the batch')
+    parser.add_argument('--plot', type=bool, default=True, help='plot the results')
     opt = parser.parse_args()
-
-    # mean and std of the training set of cifar100
-    CIFAR100_MEAN = (0.5070, 0.4865, 0.4409)
-    CIFAR100_STD = (0.2673, 0.2564, 0.2761)
-    std = np.array(CIFAR100_STD)
-    mean = np.array(CIFAR100_MEAN)
-    std = std.reshape(1, 1, 3)
-    mean = mean.reshape(1, 1, 3)
 
     # set the device
     device = torch.device(opt.device)
 
-    # load the data
-    transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=1),
-        transforms.ToTensor(),
-        transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD)
-    ])
+    opt.tol = int(opt.bs * opt.tol / 100)
 
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD)
-    ])
+    if opt.dataset == 'cifar100':
 
-    cifar100_training = torchvision.datasets.CIFAR100(root='./data', train=True, download=True,
-                                                      transform=transform)
+        # mean and std of the training set of cifar100
+        CIFAR100_MEAN = (0.5070, 0.4865, 0.4409)
+        CIFAR100_STD = (0.2673, 0.2564, 0.2761)
+        std = np.array(CIFAR100_STD)
+        mean = np.array(CIFAR100_MEAN)
+        std = std.reshape(1, 1, 3)
+        mean = mean.reshape(1, 1, 3)
 
+        # load the data
+        transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD)
+        ])
 
-    # img = cifar100_training.__getitem__(798)
-    # plott([img[0]])
-    # exit()
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD)
+        ])
 
-    cifar100_training_loader = DataLoader(
-        Datasubset(cifar100_training, opt.input_size), shuffle=True, num_workers=2, batch_size=opt.bs)
+        cifar100_training = torchvision.datasets.CIFAR100(root='./data', train=True, download=True,
+                                                          transform=transform)
 
-    cifar100_test = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
-    cifar100_test_loader = DataLoader(
-        cifar100_test, shuffle=False, num_workers=2, batch_size=100)
+        data_loader = DataLoader(cifar100_training, shuffle=True, num_workers=2, batch_size=opt.bs)
 
-    criterion = nn.CrossEntropyLoss()
+        cifar100_test = torchvision.datasets.CIFAR100(root='./data', train=False, download=True,
+                                                      transform=transform_test)
+        cifar100_test_loader = DataLoader(
+            cifar100_test, shuffle=False, num_workers=2, batch_size=100)
 
-    best_acc = 0.0
-    best_loss = 0.0
-
-    alpha = [0.5, 1, 3, 5, 15, 10000]
-    alpha.reverse()
-    alpha = 3
-
-    klist = [2]
-
-    # teachers = ['ResNet50']
-    insizes = [50000]
-
-
-
-    t = 'wrn_40_2'
-    for ins in insizes:
-
-        opt.alpha = 3
-
-        opt.path_t = './save/models/' + t + '_vanilla/ckpt_epoch_240.pth'
         # load the teacher model
-        model = load_teacher(opt.path_t, 100)
-        opt.net_name = get_teacher_name(opt.path_t)
-        opt.k = 2
-        opt.input_size = 50000
+        path_t = './save/models/' + opt.modelT + '_vanilla/ckpt_epoch_240.pth'
+        model = load_teacher(path_t, 100)
         model.eval()
         model.to(device)
+        opt.n_classes = 100
 
-        # evaluate the teacher
-        acc, _ = eval(device, model)
-        print("Teacher accuracy: %.2f" % (acc * 100))
 
-        save_dir = opt.save_dir + '/' + opt.net_name + '_k:' + str(opt.k) + '_alpha:' + str(
-            opt.alpha) + '_insize:' + str(opt.input_size) + '1meg/data/'
+    elif opt.dataset == 'imagenet':
+        # mean and std of the training set of ImageNet
+        mean_imgnet = (0.485, 0.456, 0.406)
+        std_imgnet = (0.229, 0.224, 0.225)
+        std = np.array(std_imgnet)
+        mean = np.array(mean_imgnet)
+        std = std.reshape(1, 1, 3)
+        mean = mean.reshape(1, 1, 3)
 
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        train_dataset = datasets.ImageFolder(
+            opt.input_dir,
+            transforms.Compose([
+                transforms.Scale(260),
+                transforms.RandomCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean_imgnet,
+                                     std=std_imgnet),
+            ]))
 
-        augment(plot=False)
+        data_loader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=opt.bs, num_workers=4, pin_memory=True, shuffle=True)
+
+        loader = getattr(models, opt.modelT)
+
+        model = loader(pretrained=True)
+        model.eval()
+        model.to(device)
+        opt.n_classes = 1000
+
+    if not os.path.exists(opt.save_dir):
+        os.makedirs(opt.save_dir)
+
+    augment(opt, data_loader)
