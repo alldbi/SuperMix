@@ -26,7 +26,7 @@
     * `--plot`: plot the mixed images after generation, default: `True`
 
 
-### Example for the ImageNet data
+### Run on the ImageNet data
 1. Run supermix.py
 ```
 python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir --bs 16 --aug_size 50000 --w 16 --sigma 2
@@ -36,7 +36,7 @@ python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir -
 ![](https://github.com/alldbi/KDA/blob/master/examples/imagenet.png)
 
 
-### Example for the CIFAR-100 data
+### Run on the CIFAR-100 data
 
 1. Download the pretrained model by: 
 
