@@ -59,12 +59,9 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
 <img src="https://github.com/alldbi/KDA/blob/master/examples/cifar100.png">
 </p>
 
+## Evaluating SuperMix for knowledge distillation and object classification
 
-## Installation
-
-This repo was tested with Ubuntu 16.04.5 LTS, Python 3.5, PyTorch 0.4.0, and CUDA 9.0. But it should be runnable with recent PyTorch versions >=0.4.0
-
-## Running
+**Code for distillation is forked/copied from [the official code of CRD](https://github.com/HobbitLong/RepDistiller)
 
 1. Fetch the pretrained teacher models by:
 
