@@ -56,7 +56,7 @@ def parse_option():
     parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
 
     # model
-    parser.add_argument('--model_s', type=str, default='ResNet50',
+    parser.add_argument('--model_s', type=str, default='resnet20',
                         choices=['resnet8', 'resnet14', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110',
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19', 'ResNet50',
@@ -73,9 +73,9 @@ def parse_option():
     #                     help='address of the augmented dataset')
 
     # augmentation parameters
-    parser.add_argument('--aug_type', type=str, default='cutmix', choices=[None, 'mixup', 'cutmix', 'supermix'],
+    parser.add_argument('--aug_type', type=str, default='supermix', choices=[None, 'mixup', 'cutmix', 'supermix'],
                         help='type of augmentation')
-    parser.add_argument('--aug_dir', type=str, default='/home/mehdi/output/alpha_3/all/',
+    parser.add_argument('--aug_dir', type=str, default='/home/aldb/outputs/new2/wrn_40_2_k:3_alpha:3',
                         help='address of the augmented dataset')
     parser.add_argument('--aug_size', type=str, default=-1,
                         help='size of the augmented dataset, -1 means the maximum possible size')
@@ -150,30 +150,19 @@ def distill(opt):
 
     opt.model_t = get_teacher_name(opt.path_t)
 
-    if opt.aug_type == 'supermix':
-        # opt.aug_dir = opt.aug_dir + opt.model_t + '_alpha:' + str(opt.aug_alpha)+'_better'
-        # opt.aug_dir = '/media/aldb2/M2/datasets/supermix/alpha3/all/' + opt.model_t + '_k:'+str(opt.aug_k)+'_alpha:3'
-        opt.aug_dir = '/home/aldb2/aug_dataset/vgg_sigma2_size16/vgg13_k:3_alpha:3'
-        opt.aug_dir = '/home/aldb2/aug_dataset/out_imgnet'
-        opt.aug_dir = '/home/aldb2/aug_dataset/fewshot/vgg13_k:2_alpha:3_insize:' + str(opt.orig_size)
-        print("Aug dir for supermix:", opt.aug_dir)
-    else:
-        opt.aug_dir = ''
-
     opt.print_freq = int(50000 / opt.batch_size / opt.print_freq)
 
-    opt.model_name = 'S:{}_T:{}_{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_augK:{}_T:{}'.format(
+    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_T:{}'.format(
         opt.model_s, opt.model_t,
         opt.dataset,
         opt.distill,
-        opt.orig_size,
         opt.gamma, opt.alpha, opt.beta,
         opt.trial,
         opt.device, opt.seed,
         opt.aug_type,
         opt.aug_lambda,
         opt.aug_alpha,
-        opt.aug_size,opt.aug_k, opt.kd_T)
+        opt.aug_size, opt.kd_T)
 
     opt.save_folder = os.path.join(opt.model_path, opt.model_name)
     if not os.path.isdir(opt.save_folder):
@@ -213,7 +202,6 @@ def distill(opt):
 
     print('Decay epochs: ', opt.lr_decay_epochs)
     print('Max epochs: ', opt.epochs)
-    # exit()
 
     # set the device
     if torch.cuda.is_available():
@@ -229,7 +217,7 @@ def distill(opt):
 
     print("Size of the teacher:", count_parameters(model_t))
     print("Size of the student:", count_parameters(model_s))
-    exit()
+
     data = torch.randn(2, 3, 32, 32)
     model_t.eval()
     model_s.eval()
@@ -357,8 +345,6 @@ def distill(opt):
     logger = Logger(dir=opt.save_folder,
                     var_names=['Epoch', 'l_xent', 'l_kd', 'l_other', 'acc_train', 'acc_test', 'acc_test_best', 'lr'],
                     format=['%02d', '%.4f', '%.4f', '%.4f', '%.2f', '%.2f', '%.2f', '%.6f'], args=opt)
-
-    exit()
 
     total_t = 0
     # routine

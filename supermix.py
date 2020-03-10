@@ -496,6 +496,7 @@ if __name__ == '__main__':
         model.to(device)
         opt.n_classes = 1000
 
+    opt.save_dir = os.path.join(opt.save_dir, 'data')
     if not os.path.exists(opt.save_dir):
         os.makedirs(opt.save_dir)
 

@@ -199,7 +199,7 @@ def get_cifar100_dataloaders(opt, is_instance=False):
         # exit()
 
         train_loader = torch.utils.data.DataLoader(
-            ConcatDataset(Datasubset(train_set, opt.orig_size), train_set_aug, len=opt.aug_size, opt=opt), batch_size=opt.batch_size, shuffle=True,
+            ConcatDataset(train_set, train_set_aug, len=opt.aug_size, opt=opt), batch_size=opt.batch_size, shuffle=True,
             num_workers=opt.num_workers, pin_memory=True)
     else:
         train_loader = DataLoader(train_set,
