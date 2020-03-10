@@ -10,7 +10,7 @@
 
 - Auguments are:
     * `--dataset`: specify the dataset, choices: `imagenet` or `cifar100`, default: `cifar100`.
-    * `--model`: specify the supervisor for augmentation. For `cifar100`, all the models in `models/\_\_init\_\_.py` can be used. For imagenet, all the models in `torchvision.models` can be used.
+    * `--model`: specify the supervisor for augmentation. For `cifar100`, all the models in 'models/\_\_init\_\_.py' can be used. For imagenet, all the models in `torchvision.models` can be used.
     * `--distill`: specify the distillation method
     * `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
     * `-a`: the weight of the KD loss, default: `None`
