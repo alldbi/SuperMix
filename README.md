@@ -7,26 +7,13 @@
 **Augment a dataset using the supervision of a teacher**
 
 ## Running SuperMix on ImageNet
+python supermix.py --dataset imagenet --distill kd --model_s resnet8x4 -r 0.1 -a 0.9 -b 0 --trial 1
+
+```
+python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir --bs 16 --aug_size 50000
+```
 
 
-
-
-**(2) benchmarks 12 state-of-the-art knowledge distillation methods in PyTorch, including:**
-
-(KD) - Distilling the Knowledge in a Neural Network  
-(FitNet) - Fitnets: hints for thin deep nets  
-(AT) - Paying More Attention to Attention: Improving the Performance of Convolutional Neural Networks
-    via Attention Transfer  
-(SP) - Similarity-Preserving Knowledge Distillation  
-(CC) - Correlation Congruence for Knowledge Distillation  
-(VID) - Variational Information Distillation for Knowledge Transfer  
-(RKD) - Relational Knowledge Distillation  
-(PKT) - Probabilistic Knowledge Transfer for deep representation learning  
-(AB) - Knowledge Transfer via Distillation of Activation Boundaries Formed by Hidden Neurons  
-(FT) - Paraphrasing Complex Network: Network Compression via Factor Transfer  
-(FSP) - A Gift from Knowledge Distillation:
-    Fast Optimization, Network Minimization and Transfer Learning  
-(NST) - Like what you like: knowledge distill via neuron selectivity transfer 
 
 ## Installation
 
