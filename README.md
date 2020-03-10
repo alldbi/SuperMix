@@ -22,6 +22,9 @@ python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir -
    
 2. Run supermix.py
 
+```
+python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir --bs 64 --aug_size 50000 --w 8 --sigma 1
+```
 
 
 
