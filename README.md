@@ -17,9 +17,9 @@ python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir -
 
 1. Download the pretrained model by: 
 
-    ```
-    sh scripts/fetch_pretrained_teachers.sh
-    ```
+```
+sh scripts/fetch_pretrained_teachers.sh
+```
    which saves the models to `save/models`
    
 2. Run supermix.py
