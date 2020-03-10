@@ -103,26 +103,7 @@ Note: the default setting is for a single-GPU training. If you would like to pla
 
 ## Benchmark Results on CIFAR-100:
 
-Performance is measured by classification accuracy (%)
-
-1. Performance of distillation vs. size of the augmented dataset when teacher and student are from the same architecture.
-
-| Teacher/Student | Aug  | 0   | 50K | 100k |200k |300k | 400k | 500k |
-| -----------     | ---- | ----| --- | --- | ---- | ---- | ---- | ---- |
-| wrn-40-2/wrn-16-2    | MAS  | 73.25  |74.61±0.15  | 75.81±0.14 | 75.91±0.21 | 76.21±0.14 | 76.30±0.15 | 76.30±0.14 |                     
-| resnet110/resnet20   | MAS  | 69.06  |  71.21±0.13          | 71.52±0.43 | 71.79±0.22 | 71.81±0.29 | 72.31±0.20 | 72.39±0.06 |
-| vgg13/vgg8    | MAS  |  70.36    |  71.74±0.20  | 73.18±0.10 |   74.47±0.43   |   74.57±0.06   |   74.68±0.24   | 74.59±0.12  |
-
-
-2. Performance of distillation vs. size of the augmented dataset when teacher and student are from different architecture.
-
-| Teacher/Student      | Aug  |  0       | 50K | 100k |200k |300k | 400k | 500k |
-| -----------          | ---- | -------  | --- | --- | ---- | ---- | ---- | ---- |
-| vgg13/MobileNetV2    | MAS  |  64.60   | 68.13±0.18  | 69.42±0.39 | 69.26±0.80 | 70.68±0.48 | 69.76±0.65 | 70.49±0.56  |
-
-3. Teacher and student are of the **same** architectural type.
-    - MAA: KDA with unsupervised augmentation using averaging
-    - MAS: KDA with supervised augmentation using the same Teacher network.  
+Performance is measured by classification accuracy (%) 
 
 | Teacher <br> Student | wrn-40-2 <br> wrn-16-2 | wrn-40-2 <br> wrn-40-1 | resnet56 <br> resnet20 | resnet110 <br> resnet20 | resnet110 <br> resnet32 | resnet32x4 <br> resnet8x4 |  vgg13 <br> vgg8 |
 |:---------------:|:-----------------:|:-----------------:|:-----------------:|:------------------:|:------------------:|:--------------------:|:-----------:|
@@ -140,29 +121,12 @@ Performance is measured by classification accuracy (%)
 | FSP  | 72.91 | 0.00 | 69.95 | 70.11 | 71.89 | 72.62 | 70.23 |
 | NST  | 73.68 | 72.24 | 69.60 | 69.53 | 71.96 | 73.30 | 71.53 |
 | CRD  | 75.48 | 74.14 | 71.16 | 71.46 | 73.48 | 75.51 | 73.94 |
-| ImgNet| |  |   |    |  |  |  |  | 
-| MixUp|  75.70±0.11     |   75.12±0.31     |   _71.78±0.26_    | _72.26±0.42_ |   73.70±0.32    |   76.17±0.12     |    74.07±0.32   |
-| SuperMix|    **76.30±0.14**   |    **75.49±0.38**   |   _**72.13±0.46**_    | _**72.39±0.06**_ |   **74.25±0.07**    |   **76.92±0.08**    |   **74.59±0.12**    |
+| CRD+KD |  75.64| 74.38| 71.63 | 71.56 | 73.75 | 75.46 | 74.29 |
+| ImgNet32| 74.91 | 74.80 | 71.38 | 71.48 | 73.17 | 75.57 | 73.95 |
+| MixUp|  76.20| 75.53 | 72.00 | 72.27 | 74.60 | 76.73 | 74.56 |
+| CutMix| 76.40 | 75.85 | 72.33 | 72.68 | 74.24 |76.81 | 74.87 |
+| SuperMix|    **76.93**   |    **76.11**   |   **72.64**    | **72.75** |   **74.80**    |   **77.16**    |   **75.38**    |
 
-4. Teacher and student are of **different** architectural type.
-
-| Teacher <br> Student | vgg13 <br> MobileNetV2 | ResNet50 <br> MobileNetV2 | ResNet50 <br> vgg8 | resnet32x4 <br> ShuffleNetV1 | resnet32x4 <br> ShuffleNetV2 | wrn-40-2 <br> ShuffleNetV1 |
-|:---------------:|:-----------------:|:--------------------:|:-------------:|:-----------------------:|:-----------------------:|:---------------------:|
-| Teacher <br> Student |    74.64 <br> 64.60    |      79.34 <br> 64.60     |  79.34 <br> 70.36  |       79.42 <br> 70.50       |       79.42 <br> 71.82       |      75.61 <br> 70.50      |
-| KD | 67.37 | 67.35 | 73.81 | 74.07 | 74.45 | 74.83 |
-| FitNet | 64.14 | 63.16 | 70.69 | 73.59 | 73.54 | 73.73 |
-| AT | 59.40 | 58.58 | 71.84 | 71.73 | 72.73 | 73.32 |
-| SP | 66.30 | 68.08 | 73.34 | 73.48 | 74.56 | 74.52 |
-| CC | 64.86 | 65.43 | 70.25 | 71.14 | 71.29 | 71.38 |
-| VID | 65.56 | 67.57 | 70.30 | 73.38 | 73.40 | 73.61 |
-| RKD | 64.52 | 64.43 | 71.50 | 72.28 | 73.21 | 72.21 |
-| PKT | 67.13 | 66.52 | 73.01 | 74.10 | 74.69 | 73.89 |
-| AB | 66.06 | 67.20 | 70.65 | 73.55 | 74.31 | 73.34 |
-| FT | 61.78 | 60.99 | 70.29 | 71.75 | 72.50 | 72.03 |
-| NST | 58.16 | 64.96 | 71.28 | 74.12 | 74.68 | 74.89 |
-| CRD | 69.73 | 69.11 | 74.30 | 75.11 | 75.65 | 76.05 |
-| MixUp |  **70.53±0.21**  |   70.83±0.61    |    74.94±0.42  |   77.18±0.19   |   77.99±0.15   |   75.90±0.09     |
-| SuperMix |  70.49±0.56   |    **71.69±0.36**   |   **75.45±0.08**   |    **77.69±0.32**  |   **78.66±0.20**   |    **76.88±0.35**    |
 ## Citation
 
 If you find this repo useful for your research, please consider citing the paper
