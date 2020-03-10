@@ -10,26 +10,27 @@
 
 ### On the ImageNet data
 
-   ```
-   python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir --bs 16 --aug_size 50000 --w 16 --sigma 2
-   ```
+```
+python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir --bs 16 --aug_size 50000 --w 16 --sigma 2
+```
+
 ### On the CIFAR-100 data
 
 1. Download the pretrained model by: 
 
-   ```
-   sh scripts/fetch_pretrained_teachers.sh
-   ```
+```
+sh scripts/fetch_pretrained_teachers.sh
+```
    which saves the models to `save/models`
    
 2. Run supermix.py
 
-   ```
-   python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir --bs 64 --aug_size 50000 --w 8 --sigma 1
-   ```
+```
+python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir --bs 64 --aug_size 50000 --w 8 --sigma 1
+```
+
 ### Arguments 
-
-
+this
     where the flags are explained as:
     - `--path_t`: specify the path of the teacher model
     - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
