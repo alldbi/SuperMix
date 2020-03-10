@@ -9,7 +9,7 @@
 ## Run SuperMix
 
 - Auguments are:
-    * `--path_t`: specify the path of the teacher model
+    * `--dataset`: specify the dataset, can be `imagenet` or `cifar100`
     * `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
     * `--distill`: specify the distillation method
     * `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
