@@ -144,21 +144,3 @@ Performance is measured by classification accuracy (%)
 | MixUp+KD| 76.58 | 76.10 | 72.89 | 72.82 | 74.94 | 77.07 | 75.58 |
 | CutMix+KD| 76.81 | 76.45 | 72.67 | 72.83 | 74.87 | 76.90 | 75.50 |
 | SuperMix+KD| **77.45**   |**76.53**| **73.19**| **72.96** | **75.21**|   **77.59**    |   **76.03**    |
-
-## Citation
-
-If you find this repo useful for your research, please consider citing the paper
-
-```
-@article{tian2019crd,
-  title={Contrastive Representation Distillation},
-  author={Tian, Yonglong and Krishnan, Dilip and Isola, Phillip},
-  journal={arXiv preprint arXiv:1910.10699},
-  year={2019}
-}
-```
-For any questions, please contact Yonglong Tian (yonglong@mit.edu).
-
-## Acknowledgement
-
-Thanks to Baoyun Peng for providing the code of CC and to Frederick Tung for verifying our reimplementation of SP. Thanks also go to authors of other papers who make their code publicly available.
