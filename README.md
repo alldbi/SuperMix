@@ -11,12 +11,19 @@
 - Auguments are:
     * `--dataset`: specify the dataset, choices: `imagenet` or `cifar100`, default: `cifar100`.
     * `--model`: specify the supervisor for augmentation. For `cifar100`, all the models in 'models/\_\_init\_\_.py' can be used. For imagenet, all the models in `torchvision.models` can be used.
-    * `--distill`: specify the distillation method
-    * `-r`: the weight of the cross-entropy loss between logit and ground truth, default: `1`
-    * `-a`: the weight of the KD loss, default: `None`
-    * `-b`: the weight of other distillation losses, default: `None`
-    * `--trial`: specify the experimental id to differentiate between multiple runs.
-
+    * `--device`: specify the device, default: `cuda:0`.
+    * `--save_dir`: the directory to save the mixed images.  
+    * `--input_dir`: the input directory of the imagenet dataset.
+    * `--bs`: batch size, default: `100`. 
+    * `--aug_size`: number of mixed images to produce, default: `500000`.
+    * `--k`: number of input images to be mixed, default: `2`.
+    * `--max_iter`: maximum number of iterations on each batch, default: `50`.
+    * `--alpha`: alpha value for the Dirichlet distribution, default: `3`.
+    * `--sigma`: standard deviation of the Guassian smoothing function, default: `1`.
+    * `--w`: spatial size of the mixing masks, default: `8`.
+    * `--lambda_s`: multiplier for the sparsity loss, default: `25`.
+    * `--tol`: percentage of successfull samples in the batch for early termination, default: `70`.
+    * `--plot`: plot the mixed images after generation, default: `True`
 
 
 ### On the ImageNet data
