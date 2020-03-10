@@ -1,11 +1,5 @@
 # SuperMix: Supervising the Mixing Data Augmentation
 
-This repo:
-
-**(1) covers the implementation of the following paper:**
-
-"Contrastive Representation Distillation" (CRD). [Paper](http://arxiv.org/abs/1910.10699), [Project Page](http://hobbitlong.github.io/CRD/).
-
 ![](https://github.com/alldbi/KDA/blob/master/examples/fig.png)
 
 <p></p>
