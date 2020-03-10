@@ -1,4 +1,4 @@
-# Knowledge Distillation via Mixing Augmentation
+# SuperMix: Supervising the Mixing Data Augmentation
 
 This repo:
 
