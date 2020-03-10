@@ -47,8 +47,6 @@ sh scripts/fetch_pretrained_teachers.sh
 python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir --bs 64 --aug_size 50000 --w 8 --sigma 1
 ```
 
-### Arguments 
-
 
 
 
