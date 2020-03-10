@@ -37,8 +37,6 @@ python3 supermix.py --dataset imagenet --model resnet34 --save_dir ./outputdir -
 <img src="https://github.com/alldbi/KDA/blob/master/examples/imagenet.png">
 </p>
 
-![](https://github.com/alldbi/KDA/blob/master/examples/imagenet.png)
-
 
 ### Run on the CIFAR-100 data
 
@@ -57,7 +55,9 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
 
 3. Sample outputs
 
-![](https://github.com/alldbi/KDA/blob/master/examples/cifar100.png)
+<p align="center"> 
+<img src="https://github.com/alldbi/KDA/blob/master/examples/cifar100.png">
+</p>
 
 
 ## Installation
