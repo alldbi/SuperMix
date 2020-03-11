@@ -76,12 +76,19 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
    python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./output --bs 128 --aug_size 500000 --w 8 --sigma 1
    ```   
 
-3. Run the distillation model using cross-entropy (Equation 9 in the paper) by:
+3. Run the distillation
+- using cross-entropy (Equation 9 in the paper) by:
 
    ```
    python3 train_student.py --path_t ./save/models/resnet110_vanilla/ckpt_epoch_240.pth --model_s resnet20 --distill kd --model_s resnet8x4 -r 2.0 -a 0 -b 0 --aug_type supermix --aug_dir ./output --trial 1
    ```
-   
+- using the original distillation objective proposed by Hinton et. al., (Equation 8 in the paper) by:
+
+   ```
+   python3 train_student.py --path_t ./save/models/resnet110_vanilla/ckpt_epoch_240.pth --model_s resnet20 --distill kd --model_s resnet8x4 -r 1.8 -a 0.2 -b 0 --aug_type supermix --aug_dir ./output --trial 1
+   ```
+
+
 - where the flags are explained as:
    - `--path_t`: specify the path of the teacher model
    - `--model_s`: specify the student model, see 'models/\_\_init\_\_.py' to check the available model types.
@@ -138,20 +145,17 @@ Performance is measured by classification accuracy (%)
 | CutMix+KD| 76.81 | 76.45 | 72.67 | 72.83 | 74.87 | 76.90 | 75.50 |
 | SuperMix+KD| **77.45**   |**76.53**| **73.19**| **72.96** | **75.21**|   **77.59**    |   **76.03**    |
 
+
 ## Citation
 
-If you find this repo useful for your research, please consider citing the paper
+The citation information for SuperMix will be available soon. Meanwhile, if you founed the code helpful for your research, please also cite the paper for CRD due to their notable contribution by benchmarking the state-of-the-art methods of distillation. 
 
 ```
-@article{tian2019crd,
+@inproceedings{tian2019crd,
   title={Contrastive Representation Distillation},
-  author={Tian, Yonglong and Krishnan, Dilip and Isola, Phillip},
-  journal={arXiv preprint arXiv:1910.10699},
-  year={2019}
+  author={Yonglong Tian and Dilip Krishnan and Phillip Isola},
+  booktitle={International Conference on Learning Representations},
+  year={2020}
 }
 ```
-For any questions, please contact Yonglong Tian (yonglong@mit.edu).
 
-## Acknowledgement
-
-Thanks to Baoyun Peng for providing the code of CC and to Frederick Tung for verifying our reimplementation of SP. Thanks also go to authors of other papers who make their code publicly available.
