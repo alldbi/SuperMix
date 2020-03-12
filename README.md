@@ -100,18 +100,9 @@ python3 supermix.py --dataset cifar100 --model resnet110 --save_dir ./outputdir 
    - `--aug_dir`: the directory of augmented images when `supermix` is selected for `aug_type`.
    - `--aug_alpha`: alpha for the Dirichlet distribution when `mixup` or `cutmix` is selected for `aug_type`. 
    - `--trial`: specify the experimental id to differentiate between multiple runs.
-    
-    Therefore, the command for running CRD is something like:
-    ```
-    python train_student.py --path_t ./save/models/resnet32x4_vanilla/ckpt_epoch_240.pth --distill crd --model_s resnet8x4 -a 0 -b 0.8 --trial 1
-    ```
-    
-    Combining a distillation objective with KD is simply done by setting `-a` as a non-zero value, which results in the following example (combining CRD with KD)
-    ```
-    python train_student.py --path_t ./save/models/resnet32x4_vanilla/ckpt_epoch_240.pth --distill crd --model_s resnet8x4 -a 1 -b 0.8 --trial 1     
-    ```
+   
 
-3. (optional) Train teacher networks from scratch. Example commands are in `scripts/run_cifar_vanilla.sh`
+4. (optional) Train teacher networks from scratch. Example commands are in `scripts/run_cifar_vanilla.sh`
 
 Note: the default setting is for a single-GPU training. If you would like to play this repo with multiple GPUs, you might need to tune the learning rate, which empirically needs to be scaled up linearly with the batch size, see [this paper](https://arxiv.org/abs/1706.02677)
 
