@@ -1,4 +1,4 @@
-# SuperMix: Supervising the Mixing Data Augmentation [paper](https://arxiv.org/abs/2003.05034)
+# [SuperMix: Supervising the Mixing Data Augmentation](https://arxiv.org/abs/2003.05034)
 
 ![](https://github.com/alldbi/KDA/blob/master/examples/fig1.png)
 
