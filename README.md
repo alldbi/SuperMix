@@ -149,7 +149,7 @@ If you found SuperMix helpful for your research, please cite our paper:
   year={2020}
 }
 ```
-Moreover, please cite CRD due to their notable contribution by benchmarking the state-of-the-art methods of distillation.
+Moreover, if you are developing distillation methods, we encourage you to cite CRD, due to their notable contribution by benchmarking the state-of-the-art methods of distillation.
 ```
 @inproceedings{tian2019crd,
   title={Contrastive Representation Distillation},
