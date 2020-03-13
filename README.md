@@ -1,10 +1,10 @@
-# [SuperMix: Supervising the Mixing Data Augmentation](https://arxiv.org/abs/2003.05034)
+# SuperMix: Supervising the Mixing Data Augmentation
 
 ![](https://github.com/alldbi/KDA/blob/master/examples/fig1.png)
 
 <p></p>
 
-**Augment a dataset using the supervision of a teacher**
+**Pytorch implementation of SuperMix [paper](https://arxiv.org/abs/2003.05034), which is a supervised method for data augmentation.**
 
 ## Run SuperMix
 
