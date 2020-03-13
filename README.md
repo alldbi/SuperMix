@@ -139,8 +139,17 @@ Performance is measured by classification accuracy (%)
 
 ## Citation
 
-The citation information for SuperMix will be available soon. Meanwhile, if you founed the code helpful for your research, please also cite the paper for CRD due to their notable contribution by benchmarking the state-of-the-art methods of distillation. 
+If you founed SuperMix helpful for your research, please cite our paper: 
 
+```
+@article{dabouei2020,
+  title={SuperMix: Supervising the Mixing Data Augmentation},
+  author={Dabouei, Ali and Soleymani, Sobhan and Taherkhani, Fariborz and Nasrabadi, Nasser M},
+  journal={arXiv preprint arXiv:2003.05034},
+  year={2020}
+}
+```
+Moreover, please cite CRD due to their notable contribution by benchmarking the state-of-the-art methods of distillation.
 ```
 @inproceedings{tian2019crd,
   title={Contrastive Representation Distillation},
