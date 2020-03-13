@@ -139,7 +139,7 @@ Performance is measured by classification accuracy (%)
 
 ## Citation
 
-If you founed SuperMix helpful for your research, please cite our paper: 
+If you found SuperMix helpful for your research, please cite our paper: 
 
 ```
 @article{dabouei2020,
