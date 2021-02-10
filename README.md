@@ -136,6 +136,8 @@ Performance is measured by classification accuracy (%)
 | CutMix+KD| 76.81 | 76.45 | 72.67 | 72.83 | 74.87 | 76.90 | 75.50 |
 | SuperMix+KD| **77.45**   |**76.53**| **73.19**| **72.96** | **75.21**|   **77.59**    |   **76.03**    |
 
+## Questions
+If there is a question regarding any part of the code, or it needs further clarification, please create an issue or send me an email: ad0046@mix.wvu.edu.
 
 ## Citation
 
