@@ -4,7 +4,7 @@
 
 <p></p>
 
-**Pytorch implementation of [SuperMix paper](https://arxiv.org/abs/2003.05034), a supervised method for data augmentation (will appear CVPR 2021).**
+**Pytorch implementation of [SuperMix paper](https://arxiv.org/abs/2003.05034), a supervised method for data augmentation (will appear in CVPR 2021).**
 
 ## Run SuperMix
 
