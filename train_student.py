@@ -358,6 +358,226 @@ def distill(opt):
         print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
         print('Best accuracy: %.2f \n' % (best_acc))
 
+def distill(opt):
+    # refine the opt arguments
+
+    opt.model_path = './save/student_model'
+
+    iterations = opt.lr_decay_epochs.split(',')
+    opt.lr_decay_epochs = list([])
+    for it in iterations:
+        opt.lr_decay_epochs.append(int(it))
+
+    opt.model_t = get_teacher_name(opt.path_t)
+
+    opt.print_freq = int(50000 / opt.batch_size / opt.print_freq)
+
+    opt.model_name = 'S:{}_T:{}_{}_{}/r:{}_a:{}_b:{}_{}_{}_{}_{}_lam:{}_alp:{}_augsize:{}_T:{}'.format(
+        opt.model_s, opt.model_t,
+        opt.dataset,
+        opt.distill,
+        opt.gamma, opt.alpha, opt.beta,
+        opt.trial,
+        opt.device, opt.seed,
+        opt.aug_type,
+        opt.aug_lambda,
+        opt.aug_alpha,
+        opt.aug_size, opt.kd_T)
+
+    opt.save_folder = os.path.join(opt.model_path, opt.model_name)
+    if not os.path.isdir(opt.save_folder):
+        os.makedirs(opt.save_folder)
+
+    opt.learning_rate = 0.1 * opt.batch_size / 128
+
+    # set different learning rate from these 4 models
+    if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
+        opt.learning_rate = opt.learning_rate / 5
+
+    print("learning rate is set to:", opt.learning_rate)
+
+    best_acc = 0
+    np.random.seed(opt.seed)
+    torch.manual_seed(opt.seed)
+
+    # dataloader
+    if opt.dataset == 'cifar100':
+        if opt.distill in ['crd']:
+            train_loader, val_loader, n_data = get_cifar100_dataloaders_sample(batch_size=opt.batch_size,
+                                                                               num_workers=opt.num_workers,
+                                                                               k=opt.nce_k,
+                                                                               mode=opt.mode)
+        else:
+            train_loader, val_loader, n_data = get_cifar100_dataloaders(opt, is_instance=True)
+        n_cls = 100
+    else:
+        raise NotImplementedError(opt.dataset)
+
+    # set the interval for testing
+    opt.test_freq = int(50000 / opt.batch_size)
+
+    # compute number of epochs using the original cifar100 dataset size
+    opt.lr_decay_epochs = list(int(i * 50000 / opt.aug_size) for i in opt.lr_decay_epochs)
+    opt.epochs = int(opt.epochs * 50000 / opt.aug_size)
+
+    print('Decay epochs: ', opt.lr_decay_epochs)
+    print('Max epochs: ', opt.epochs)
+
+    # set the device
+    if torch.cuda.is_available():
+        device = torch.device(opt.device)
+    else:
+        device = torch.device('cpu')
+
+    # model
+    model_t = load_teacher(opt.path_t, n_cls)
+    model_s = model_dict[opt.model_s](num_classes=n_cls)
+
+    # print(model_s)
+
+    print("Size of the teacher:", count_parameters(model_t))
+    print("Size of the student:", count_parameters(model_s))
+
+    data = torch.randn(2, 3, 32, 32)
+    model_t.eval()
+    model_s.eval()
+    feat_t, _ = model_t(data, is_feat=True)
+    feat_s, _ = model_s(data, is_feat=True)
+
+    module_list = nn.ModuleList([])
+    module_list.append(model_s)
+    trainable_list = nn.ModuleList([])
+    trainable_list.append(model_s)
+
+    criterion_cls = nn.CrossEntropyLoss()
+    criterion_div = DistillKL(opt.kd_T)
+    if opt.distill == 'kd':
+        criterion_kd = DistillKL(opt.kd_T)
+    elif opt.distill == 'hint':
+        criterion_kd = HintLoss()
+        regress_s = ConvReg(feat_s[opt.hint_layer].shape, feat_t[opt.hint_layer].shape)
+        module_list.append(regress_s)
+        trainable_list.append(regress_s)
+    elif opt.distill == 'crd':
+        opt.s_dim = feat_s[-1].shape[1]
+        opt.t_dim = feat_t[-1].shape[1]
+        opt.n_data = n_data
+        criterion_kd = CRDLoss(opt)
+        module_list.append(criterion_kd.embed_s)
+        module_list.append(criterion_kd.embed_t)
+        trainable_list.append(criterion_kd.embed_s)
+        trainable_list.append(criterion_kd.embed_t)
+    elif opt.distill == 'attention':
+        criterion_kd = Attention()
+    elif opt.distill == 'nst':
+        criterion_kd = NSTLoss()
+    elif opt.distill == 'similarity':
+        criterion_kd = Similarity()
+    elif opt.distill == 'rkd':
+        criterion_kd = RKDLoss()
+    elif opt.distill == 'pkt':
+        criterion_kd = PKT()
+    elif opt.distill == 'kdsvd':
+        criterion_kd = KDSVD()
+    elif opt.distill == 'correlation':
+        criterion_kd = Correlation()
+        embed_s = LinearEmbed(feat_s[-1].shape[1], opt.feat_dim)
+        embed_t = LinearEmbed(feat_t[-1].shape[1], opt.feat_dim)
+        module_list.append(embed_s)
+        module_list.append(embed_t)
+        trainable_list.append(embed_s)
+        trainable_list.append(embed_t)
+    elif opt.distill == 'vid':
+        s_n = [f.shape[1] for f in feat_s[1:-1]]
+        t_n = [f.shape[1] for f in feat_t[1:-1]]
+        criterion_kd = nn.ModuleList(
+            [VIDLoss(s, t, t) for s, t in zip(s_n, t_n)]
+        )
+        # add this as some parameters in VIDLoss need to be updated
+        trainable_list.append(criterion_kd)
+    elif opt.distill == 'abound':
+        s_shapes = [f.shape for f in feat_s[1:-1]]
+        t_shapes = [f.shape for f in feat_t[1:-1]]
+        connector = Connector(s_shapes, t_shapes)
+        # init stage training
+        init_trainable_list = nn.ModuleList([])
+        init_trainable_list.append(connector)
+        init_trainable_list.append(model_s.get_feat_modules())
+        criterion_kd = ABLoss(len(feat_s[1:-1]))
+        init(model_s, model_t, init_trainable_list, criterion_kd, train_loader, opt)
+        # classification
+        module_list.append(connector)
+    elif opt.distill == 'factor':
+        s_shape = feat_s[-2].shape
+        t_shape = feat_t[-2].shape
+        paraphraser = Paraphraser(t_shape)
+        translator = Translator(s_shape, t_shape)
+        # init stage training
+        init_trainable_list = nn.ModuleList([])
+        init_trainable_list.append(paraphraser)
+        criterion_init = nn.MSELoss()
+        init(model_s, model_t, init_trainable_list, criterion_init, train_loader, opt)
+        # classification
+        criterion_kd = FactorTransfer()
+        module_list.append(translator)
+        module_list.append(paraphraser)
+        trainable_list.append(translator)
+    elif opt.distill == 'fsp':
+        s_shapes = [s.shape for s in feat_s[:-1]]
+        t_shapes = [t.shape for t in feat_t[:-1]]
+        criterion_kd = FSP(s_shapes, t_shapes)
+        # init stage training
+        init_trainable_list = nn.ModuleList([])
+        init_trainable_list.append(model_s.get_feat_modules())
+        init(model_s, model_t, init_trainable_list, criterion_kd, train_loader, opt)
+        # classification training
+        pass
+    else:
+        raise NotImplementedError(opt.distill)
+
+    criterion_list = nn.ModuleList([])
+    criterion_list.append(criterion_cls)  # classification loss
+    criterion_list.append(criterion_div)  # KL divergence loss, original knowledge distillation
+    criterion_list.append(criterion_kd)  # other knowledge distillation loss
+
+    # optimizer
+    optimizer = optim.SGD(trainable_list.parameters(),
+                          lr=opt.learning_rate,
+                          momentum=opt.momentum,
+                          weight_decay=opt.weight_decay)
+
+    # append teacher after optimizer to avoid weight_decay
+    module_list.append(model_t)
+
+    if torch.cuda.is_available():
+        module_list.to(device)
+        criterion_list.to(device)
+        cudnn.benchmark = True
+
+    # setup warmup
+    warmup_scheduler = WarmUpLR(optimizer, len(train_loader) * opt.epochs_warmup)
+
+    # validate teacher accuracy
+    teacher_acc, _, _ = validate(val_loader, model_t, criterion_cls, opt)
+    print('teacher accuracy: %.2f \n' % (teacher_acc))
+
+    # creat logger
+    logger = Logger(dir=opt.save_folder,
+                    var_names=['Epoch', 'l_xent', 'l_kd', 'l_other', 'acc_train', 'acc_test', 'acc_test_best', 'lr'],
+                    format=['%02d', '%.4f', '%.4f', '%.4f', '%.2f', '%.2f', '%.2f', '%.6f'], args=opt)
+
+    total_t = 0
+    # routine
+    for epoch in range(1, opt.epochs + 1):
+        adjust_learning_rate(epoch, opt, optimizer)
+        time1 = time.time()
+        best_acc, total_t = train(epoch, train_loader, val_loader, module_list, criterion_list, optimizer, opt,
+                                  best_acc, logger,
+                                  device, warmup_scheduler, total_t)
+        time2 = time.time()
+        print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
+        print('Best accuracy: %.2f \n' % (best_acc))
+
 
 if __name__ == '__main__':
     opt = parse_option()
